@@ -1622,7 +1622,41 @@ function renderPesertaUjian() {
 
     let html = '';
     paginatedList.forEach(p => {
-        html += `<div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between cursor-pointer group" onclick="switchView('penilaian-detail', '${p.id}', '${kat}')"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-full ${p.warna} flex items-center justify-center font-bold text-xs">${p.inisial}</div><div><h4 class="font-bold text-teal-950 text-sm group-hover:text-primary">${p.nama}</h4><p class="text-[10px] text-gray-500 mt-0.5">ID: ${p.id} • ${p.kelas}</p></div></div><span class="material-symbols-outlined text-gray-300 group-hover:text-primary">arrow_forward_ios</span></div>`;
+        const s = getStatusPeserta(p.id, kat);
+        let progressIndicator;
+
+        if (s.progress === 100) {
+            progressIndicator = `
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-emerald-500 text-base">check_circle</span>
+                    <span class="text-xs font-bold text-emerald-600">Selesai (${s.completed}/${s.total})</span>
+                </div>
+            `;
+        } else if (s.progress > 0) {
+            progressIndicator = `
+                <div class="flex items-center gap-2">
+                    <div class="w-full bg-gray-200 h-1.5 rounded-full flex-1">
+                        <div class="bg-amber-500 h-full rounded-full" style="width: ${s.progress}%"></div>
+                    </div>
+                    <span class="text-xs font-bold text-gray-500">${s.progress}%</span>
+                 </div>
+            `;
+        } else {
+            progressIndicator = `
+                <div>
+                     <span class="text-xs font-medium text-gray-400">Belum memulai</span>
+                </div>
+            `;
+        }
+
+        html += `
+        <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all flex flex-col cursor-pointer group" onclick="switchView('penilaian-detail', '${p.id}', '${kat}')">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full ${p.warna} flex items-center justify-center font-bold text-xs shrink-0">${p.inisial}</div><div><h4 class="font-bold text-teal-950 text-sm group-hover:text-primary leading-tight">${p.nama}</h4><p class="text-[10px] text-gray-500">${p.id} • ${p.kelas}</p></div></div>
+                <span class="material-symbols-outlined text-gray-300 group-hover:text-primary transition-colors">arrow_forward_ios</span>
+            </div>
+            <div class="pt-3 mt-3 border-t border-gray-100"><p class="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Progress</p>${progressIndicator}</div>
+        </div>`;
     });
 
     const emptyMessage = searchTerm ? `Tidak ada hasil untuk pencarian "${searchTerm}".` : 'Tidak ada peserta dalam kategori ini.';
@@ -1659,28 +1693,22 @@ function _renderPenilaianDetail(id, kat) {
 
     const p = dataPeserta[kat].find(x => x.id === id); if (!p) return;
     const s = getStatusPeserta(id, kat);
-    const circumference = 15.9155 * 2 * Math.PI;
-    const offset = circumference - (s.progress / 100) * circumference;
 
     currentState.studentId = id; currentState.kategori = kat;
     localStorage.setItem('currentStudentId', id); localStorage.setItem('currentKategori', kat);
     document.getElementById('detail-student-header').innerHTML = `
-        <div class="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/20 flex items-center space-x-6">
-            <div class="w-20 h-20 rounded-2xl ${p.warna} flex items-center justify-center text-3xl font-bold shadow-sm shrink-0">${p.inisial}</div>
-            <div>
-                <h2 class="text-2xl font-headline font-black text-teal-950">${p.nama}</h2>
-                <p class="text-xs text-gray-500 mt-1 font-medium">ID: ${p.id} • <span class="text-primary font-bold">${p.kelas}</span> • ${kat}</p>
-            </div>
-        </div>
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-outline-variant/20 flex flex-col items-center justify-center">
-            <div class="relative w-32 h-32">
-                <svg class="w-full h-full" viewBox="0 0 36 36" style="transform: rotate(-90deg);"><path class="text-gray-100" stroke="currentColor" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /><path class="text-primary transition-all duration-1000" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none" stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" /></svg>
-                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                    <span class="text-3xl font-headline font-black text-primary">${s.progress}%</span>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">${s.completed} / ${s.total} Ujian</span>
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/20 flex items-center gap-4">
+            <div class="w-16 h-16 rounded-xl ${p.warna} flex items-center justify-center text-2xl font-bold shadow-sm shrink-0">${p.inisial}</div>
+            <div class="flex-1 min-w-0">
+                 <h2 class="text-xl font-headline font-black text-teal-950 truncate">${p.nama}</h2>
+                 <p class="text-xs text-gray-500 font-medium truncate">ID: ${p.id} • ${p.kelas} • ${kat}</p>
+                 <div class="flex items-center gap-3 mt-2.5">
+                    <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden flex-1">
+                        <div class="bg-primary h-full transition-all duration-500" style="width: ${s.progress}%"></div>
+                    </div>
+                    <span class="text-xs font-bold text-primary">${s.progress}%</span>
                 </div>
             </div>
-            <p class="text-teal-950 text-sm font-bold mt-4">Progress Ujian</p>
         </div>`;
 
     // Generate segments dynamically based on the category's data structure
