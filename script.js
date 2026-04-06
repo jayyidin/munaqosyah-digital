@@ -251,14 +251,14 @@ function applyUserContext() {
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const sidebarNavLinks = sidebar.querySelectorAll('nav a'); // All navigation links
-    const sidebarLogoArea = sidebar.querySelector('.mb-10'); // Logo and app name area
+    const sidebarLogoArea = sidebar.querySelector('.mb-6'); // Logo and app name area
     const logoutText = document.getElementById('logout-text'); // Logout text
     const sidebarToggleIcon = document.getElementById('sidebar-toggle-icon');
     const sidebarToggleText = document.getElementById('sidebar-toggle-text');
     const sidebarFooter = sidebar.querySelector('.mt-auto'); // The div containing toggle and logout
     const sidebarFooterLinks = sidebarFooter.querySelectorAll('a');
-
     const backdrop = document.getElementById('sidebar-backdrop');
+
     const isMobile = window.innerWidth < 768;
 
     if (isMobile) {
@@ -270,50 +270,55 @@ function toggleSidebar() {
             sidebar.classList.add('-translate-x-full');
             if (backdrop) backdrop.classList.replace('block', 'hidden');
         }
-    } else {
-        // Desktop behavior: Collapse/Expand width
-        if (sidebar.classList.contains('w-64')) {
-            // Collapse sidebar
-            sidebar.classList.remove('w-64', 'px-4');
-            sidebar.classList.add('w-16', 'px-2'); // Collapsed width and padding
-            sidebar.classList.add('overflow-hidden'); // Hide overflowing content
+        return;
+    }
 
-            // Hide text elements and adjust alignment
-            sidebarLogoArea.classList.add('hidden');
-            logoutText.classList.add('hidden');
-            sidebarNavLinks.forEach(link => {
-                link.querySelector('span:not(.material-symbols-outlined)').classList.add('hidden'); // Hide nav item text
-                link.classList.remove('justify-start', 'gap-3', 'px-4');
-                link.classList.add('justify-center', 'px-2'); // Center icons and adjust padding
-            });
+    // Desktop behavior: Collapse/Expand width
+    if (sidebar.classList.contains('w-64')) {
+        // Collapse sidebar
+        sidebar.classList.remove('w-64', 'px-4');
+        sidebar.classList.add('w-16', 'px-2');
 
-            sidebarToggleIcon.textContent = 'chevron_right';
-            sidebarToggleText.classList.add('hidden'); // Hide toggle button text
-            sidebarFooter.classList.remove('pt-6');
+        // Hide text elements and adjust alignment
+        if (sidebarLogoArea) sidebarLogoArea.classList.add('hidden');
+        if (logoutText) logoutText.classList.add('hidden');
+        sidebarNavLinks.forEach(link => {
+            const textSpan = link.querySelector('span:not(.material-symbols-outlined)');
+            if (textSpan) textSpan.classList.add('hidden');
+            link.classList.remove('justify-start', 'gap-3', 'px-4');
+            link.classList.add('justify-center', 'px-2');
+        });
+
+        if (sidebarToggleIcon) sidebarToggleIcon.textContent = 'chevron_right';
+        if (sidebarToggleText) sidebarToggleText.classList.add('hidden');
+        if (sidebarFooter) {
+            sidebarFooter.classList.remove('pt-4');
             sidebarFooter.classList.add('pt-2');
             sidebarFooterLinks.forEach(link => {
                 link.classList.remove('gap-3', 'px-4');
                 link.classList.add('justify-center', 'px-2');
             });
-        } else {
-            // Expand sidebar
-            sidebar.classList.remove('w-16', 'px-2');
-            sidebar.classList.add('w-64', 'px-4'); // Expanded width and padding
-            sidebar.classList.remove('overflow-hidden');
+        }
+    } else {
+        // Expand sidebar
+        sidebar.classList.remove('w-16', 'px-2');
+        sidebar.classList.add('w-64', 'px-4');
 
-            // Show text elements and adjust alignment
-            sidebarLogoArea.classList.remove('hidden');
-            logoutText.classList.remove('hidden');
-            sidebarNavLinks.forEach(link => {
-                link.querySelector('span:not(.material-symbols-outlined)').classList.remove('hidden');
-                link.classList.remove('justify-center', 'px-2');
-                link.classList.add('justify-start', 'gap-3', 'px-4');
-            });
+        // Show text elements and adjust alignment
+        if (sidebarLogoArea) sidebarLogoArea.classList.remove('hidden');
+        if (logoutText) logoutText.classList.remove('hidden');
+        sidebarNavLinks.forEach(link => {
+            const textSpan = link.querySelector('span:not(.material-symbols-outlined)');
+            if (textSpan) textSpan.classList.remove('hidden');
+            link.classList.remove('justify-center', 'px-2');
+            link.classList.add('justify-start', 'gap-3', 'px-4');
+        });
 
-            sidebarToggleIcon.textContent = 'chevron_left';
-            sidebarToggleText.classList.remove('hidden');
+        if (sidebarToggleIcon) sidebarToggleIcon.textContent = 'chevron_left';
+        if (sidebarToggleText) sidebarToggleText.classList.remove('hidden');
+        if (sidebarFooter) {
             sidebarFooter.classList.remove('pt-2');
-            sidebarFooter.classList.add('pt-6');
+            sidebarFooter.classList.add('pt-4');
             sidebarFooterLinks.forEach(link => {
                 link.classList.remove('justify-center', 'px-2');
                 link.classList.add('gap-3', 'px-4');

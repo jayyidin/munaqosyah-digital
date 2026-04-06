@@ -156,7 +156,7 @@
             </div>
         </div>
 
-        <nav class="flex-1 space-y-2">
+        <nav class="flex-1 space-y-2 overflow-y-auto hide-scrollbar">
             <a id="nav-dashboard"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-950 font-bold border-l-4 border-tertiary-container bg-white shadow-sm transition-all group relative"
                 href="#" onclick="event.preventDefault(); switchView('dashboard')">
@@ -200,7 +200,8 @@
 
         <div class="mt-auto pt-4 border-t border-outline-variant/20 space-y-2">
             <a id="sidebar-toggle" href="#"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all group">
+                class="hidden md:flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all group"
+                onclick="event.preventDefault(); toggleSidebar();">
                 <span id="sidebar-toggle-icon"
                     class="material-symbols-outlined group-hover:text-teal-700 transition-colors">chevron_left</span>
                 <span id="sidebar-toggle-text"
