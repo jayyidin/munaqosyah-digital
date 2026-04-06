@@ -4,7 +4,6 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Login - Munaqosyah Digital</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
@@ -17,6 +16,17 @@
         if (localStorage.getItem('isLoggedIn') === 'true') {
             window.location.replace('index.html');
         }
+        window.getAppTitle = function () {
+            try {
+                const settings = JSON.parse(localStorage.getItem('munaqosyahSettings'));
+                const appName = (settings.appName || 'Aplikasi Munaqosyah').replace(/<br\s*\/?>/gi, ' ');
+                const schoolName = settings.schoolName || '';
+                return schoolName ? `${appName} - ${schoolName}` : appName;
+            } catch (e) {
+                return 'Aplikasi Munaqosyah';
+            }
+        }
+        document.write('<title>' + window.getAppTitle() + '</title>');
     </script>
 
     <link rel="stylesheet" href="style.css">
@@ -94,22 +104,21 @@
 
     <div class="w-full max-w-md">
         <div class="text-center mb-8">
-            <div class="flex items-center justify-center gap-3 mb-2">
+            <div class="flex justify-center mb-4">
                 <div
-                    class="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-md overflow-hidden">
+                    class="w-16 h-16 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-lg overflow-hidden">
                     <img id="app-logo-login" src="" alt="Logo" class="w-full h-full object-contain p-2 hidden">
-                    <span id="app-logo-icon-login" class="material-symbols-outlined text-2xl">school</span>
-                </div>
-                <div>
-                    <h1 id="app-name-login" class="text-2xl font-extrabold text-teal-950 leading-tight text-left">
-                        Al-Hikmah<br>Academy</h1>
+                    <span id="app-logo-icon-login" class="material-symbols-outlined text-4xl">import_contacts</span>
                 </div>
             </div>
-            <p class="text-gray-500 font-medium mt-4">Silakan masuk untuk melanjutkan ke dasbor</p>
+            <h1 id="app-name-login" class="text-2xl font-extrabold text-teal-950 font-headline"></h1>
+            <p id="school-name-login" class="text-sm text-gray-500 font-medium mt-1"></p>
+            <p class="text-gray-500 font-medium mt-3">Silakan masuk menggunakan akun Anda untuk mengakses dasbor Ujian
+            </p>
         </div>
 
         <!-- Login View -->
-        <div id="login-view">
+        <div id="login-view" class="form-entry-animate">
             <form id="login-form" class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-100 space-y-6">
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-teal-950">Username</label>
@@ -131,7 +140,8 @@
                 </div>
                 <div class="flex items-center justify-between text-xs">
                     <label class="flex items-center gap-2 text-gray-600 font-medium">
-                        <input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary/50"> Ingat
+                        <input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary/50">
+                        Ingat
                         Saya
                     </label>
                     <a href="#"

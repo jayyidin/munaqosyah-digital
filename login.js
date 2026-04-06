@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to load app settings (needed for registration token)
     function loadAppSettings() {
         const savedSettings = localStorage.getItem('munaqosyahSettings');
-        let appSettings = { registrationToken: null }; // Default
+        let appSettings = { registrationToken: null, schoolName: '' }; // Default
         if (savedSettings) {
             try {
                 appSettings = JSON.parse(savedSettings);
@@ -30,29 +30,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // New function to load settings from Firebase
     function loadFirebaseSettings(callback) {
         db.ref('appSettings').once('value', (snapshot) => {
-            let settings = { registrationToken: null };
+            let settings = { registrationToken: null, schoolName: '' };
             if (snapshot.exists()) {
                 settings = snapshot.val();
             }
             callback(settings);
         }).catch(error => {
             console.error("Error loading settings from Firebase:", error);
-            callback({ registrationToken: null });
+            callback({ registrationToken: null, schoolName: '' });
         });
     }
 
     // --- Apply App Name and Logo on Login Page ---
     (() => {
         const appNameEl = document.getElementById('app-name-login');
+        const schoolNameEl = document.getElementById('school-name-login');
         const logoImg = document.getElementById('app-logo-login');
         const logoIcon = document.getElementById('app-logo-icon-login');
 
         const applyLoginSettings = (settings) => {
             if (!settings) return;
 
-            if (appNameEl && settings.appName) {
-                appNameEl.innerHTML = settings.appName;
+            let title = "Login";
+            if (appNameEl && typeof settings.appName === 'string') {
+                // Ganti <br> dengan spasi untuk memastikan judul selalu satu baris
+                const singleLineAppName = settings.appName.replace(/<br\s*\/?>/gi, ' ');
+                appNameEl.innerHTML = singleLineAppName;
+                title = singleLineAppName;
             }
+
+            if (schoolNameEl && settings.schoolName) {
+                schoolNameEl.innerText = settings.schoolName;
+                if (title !== "Login") title += ` - ${settings.schoolName}`;
+            }
+            document.title = title;
 
             if (logoImg && logoIcon && settings.logoUrl) {
                 logoImg.src = settings.logoUrl;
@@ -142,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('currentView', 'dashboard');
                     localStorage.removeItem('currentStudentId');
                     localStorage.removeItem('currentKategori');
-                    window.location.href = 'index.html';
+                    window.location.replace('index.html');
                 } else {
                     // 5. Login Gagal (Kredensial Salah)
                     // Error is shown inside fakeApiLogin now

@@ -18,12 +18,13 @@ const storage = firebase.storage();
 let ujianPagination = { currentPage: 1, itemsPerPage: 8, totalItems: 0, totalPages: 0 };
 let pesertaPagination = { currentPage: 1, itemsPerPage: 10, totalItems: 0, totalPages: 0 };
 let dashboardSiswaPagination = { currentPage: 1, itemsPerPage: 5, totalItems: 0, totalPages: 0 };
+let dashboardSiswaPerhatianPagination = { currentPage: 1, itemsPerPage: 5, totalItems: 0, totalPages: 0 };
 let laporanPagination = { currentPage: 1, itemsPerPage: 10, totalItems: 0, totalPages: 0 };
 
 // --- App Settings ---
 let appSettings = {
-    schoolName: "SDIT Al Fityan School Bogor",
-    appName: "Al-Hikmah<br>Academy",
+    appName: "",
+    schoolName: "",
     theme: "light",
     logoUrl: null,
     registrationToken: null,
@@ -117,6 +118,7 @@ function loadState() {
 }
 
 function saveSettings() {
+    localStorage.setItem('munaqosyahSettings', JSON.stringify(appSettings));
     db.ref('appSettings').update(appSettings).catch(error => {
         console.error("Gagal menyimpan pengaturan:", error);
         openAlert("Gagal menyimpan pengaturan. Error: " + error.message);
@@ -131,6 +133,7 @@ function loadSettings(callback) {
                 delete loaded.examStartDate;
             }
             appSettings = { ...appSettings, ...loaded };
+            localStorage.setItem('munaqosyahSettings', JSON.stringify(appSettings));
         } else {
             // If no settings, save the default ones
             saveSettings();
@@ -152,8 +155,13 @@ function openAlert(m) { document.getElementById('alert-message').innerText = m; 
 function closeAlert() { document.getElementById('modal-alert').classList.replace('flex', 'hidden'); }
 
 function applySettings() {
-    document.getElementById('school-name-sidebar').innerText = appSettings.schoolName;
     document.getElementById('app-name-sidebar').innerHTML = appSettings.appName;
+    const schoolNameSidebar = document.getElementById('school-name-sidebar');
+    if (schoolNameSidebar) schoolNameSidebar.innerText = appSettings.schoolName || '';
+
+    let title = appSettings.appName.replace(/<br\s*\/?>/gi, ' ');
+    if (appSettings.schoolName) title += ` - ${appSettings.schoolName}`;
+    document.title = title;
 
     const logoUrl = appSettings.logoUrl;
     const sidebarLogoImg = document.getElementById('app-logo-sidebar');
@@ -161,8 +169,10 @@ function applySettings() {
     const loaderLogoImg = document.getElementById('app-logo-loader');
     const loaderLogoIcon = document.getElementById('app-logo-icon-loader');
     const loaderAppName = document.getElementById('app-name-loader');
+    const loaderSchoolName = document.getElementById('school-name-loader');
 
     if (loaderAppName) loaderAppName.innerHTML = appSettings.appName;
+    if (loaderSchoolName) loaderSchoolName.innerText = appSettings.schoolName || '';
 
     if (logoUrl && sidebarLogoImg && sidebarLogoIcon) {
         sidebarLogoImg.src = logoUrl;
@@ -184,16 +194,10 @@ function applySettings() {
         }
     }
 
-    // Apply school name to Peserta page title
-    const pesertaSchoolName = document.getElementById('peserta-school-name');
-    if (pesertaSchoolName) {
-        pesertaSchoolName.innerText = appSettings.schoolName;
-    }
-
     const viewPengaturan = document.getElementById('view-pengaturan');
     if (viewPengaturan && !viewPengaturan.classList.contains('hidden')) {
-        document.getElementById('setting-input-school-name').value = appSettings.schoolName;
         document.getElementById('setting-input-app-name').value = appSettings.appName.replace('<br>', ' ');
+        document.getElementById('setting-input-school-name').value = appSettings.schoolName || '';
 
         const settingsPreviewImg = document.getElementById('setting-logo-preview');
         const settingsPreviewIcon = document.getElementById('setting-logo-icon-preview');
@@ -489,12 +493,7 @@ function findKategoriOfSurah(surahNo) {
     return null;
 }
 
-function renderDashboard() {    // Update dashboard title
-    const dashboardTitle = document.getElementById('dashboard-title');
-    if (dashboardTitle) {
-        dashboardTitle.textContent = `Dasbor ${appSettings.appName.replace('<br>', ' ')}`;
-    }
-
+function renderDashboard() {
     const filter = document.getElementById('dash-filter-kategori').value;
     const stats = calculateDashboardStats(filter);
 
@@ -504,7 +503,7 @@ function renderDashboard() {    // Update dashboard title
     renderPapanPeringkat(stats);
     renderGuruPengujiDashboard();
     renderGrafikRataRata(stats);
-    renderSiswaPerluPerhatian();
+    renderSiswaPerluPerhatianDashboard(); // Call the new function
 }
 
 function renderProgresDetail(stats) {
@@ -677,22 +676,21 @@ function renderGrafikRataRata(stats) {
     });
 }
 
-function renderSiswaPerluPerhatian() {
+function renderSiswaPerluPerhatianDashboard() {
     const container = document.getElementById('dash-siswa-perhatian');
     if (!container) return;
 
     const allData = getLaporanData();
     const perluPerhatian = allData.filter(s => !s.lulus && s.progress > 0).sort((a, b) => a.avg - b.avg);
 
-    // Pagination logic
-    dashboardSiswaPagination.totalItems = perluPerhatian.length;
-    dashboardSiswaPagination.totalPages = Math.ceil(dashboardSiswaPagination.totalItems / dashboardSiswaPagination.itemsPerPage);
-    if (dashboardSiswaPagination.currentPage > dashboardSiswaPagination.totalPages) {
-        dashboardSiswaPagination.currentPage = dashboardSiswaPagination.totalPages || 1;
+    dashboardSiswaPerhatianPagination.totalItems = perluPerhatian.length;
+    dashboardSiswaPerhatianPagination.totalPages = Math.ceil(dashboardSiswaPerhatianPagination.totalItems / dashboardSiswaPerhatianPagination.itemsPerPage);
+    if (dashboardSiswaPerhatianPagination.currentPage > dashboardSiswaPerhatianPagination.totalPages) {
+        dashboardSiswaPerhatianPagination.currentPage = dashboardSiswaPerhatianPagination.totalPages || 1;
     }
 
-    const startIndex = (dashboardSiswaPagination.currentPage - 1) * dashboardSiswaPagination.itemsPerPage;
-    const paginatedData = perluPerhatian.slice(startIndex, startIndex + dashboardSiswaPagination.itemsPerPage);
+    const startIndex = (dashboardSiswaPerhatianPagination.currentPage - 1) * dashboardSiswaPerhatianPagination.itemsPerPage;
+    const paginatedData = perluPerhatian.slice(startIndex, startIndex + dashboardSiswaPerhatianPagination.itemsPerPage);
 
     let html = '';
     if (paginatedData.length === 0) {
@@ -716,18 +714,18 @@ function renderSiswaPerluPerhatian() {
         });
     }
     container.innerHTML = html;
-    renderPaginationDashSiswa();
+    renderPaginationDashSiswaPerhatian();
 }
 
-function renderPaginationDashSiswa() {
+function renderPaginationDashSiswaPerhatian() {
     const container = document.getElementById('pagination-dash-siswa');
     if (!container) return;
-    const { currentPage, totalPages } = dashboardSiswaPagination;
+    const { currentPage, totalPages } = dashboardSiswaPerhatianPagination;
 
     if (totalPages <= 1) { container.innerHTML = ''; return; }
 
     let html = '';
-    for (let i = 1; i <= totalPages; i++) {
+    for (let i = 1; i <= totalPages; i++) { // Changed to dashboardSiswaPerhatianPagination
         html += `<button onclick="changeDashSiswaPage(${i})" class="w-6 h-6 text-xs font-bold rounded-md ${currentPage === i ? 'bg-primary text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}">${i}</button>`;
     }
     container.innerHTML = html;
@@ -735,8 +733,8 @@ function renderPaginationDashSiswa() {
 
 function changeDashSiswaPage(page) {
     if (page < 1 || page > dashboardSiswaPagination.totalPages) return;
-    dashboardSiswaPagination.currentPage = page;
-    renderSiswaPerluPerhatian();
+    dashboardSiswaPerhatianPagination.currentPage = page;
+    renderSiswaPerluPerhatianDashboard();
 }
 
 function renderDashboardFilterOptions() {
@@ -1084,11 +1082,18 @@ function renderLaporanPage() {
     // --- Filter Data ---
     const filterKat = document.getElementById('laporan-filter-kategori').value;
     const filterKelas = document.getElementById('laporan-filter-kelas').value;
+    const filterStatus = document.getElementById('laporan-filter-status').value;
     const searchTerm = document.getElementById('laporan-search').value.toLowerCase();
 
     let filteredData = allData;
     if (filterKat) filteredData = filteredData.filter(s => s.kategori === filterKat);
     if (filterKelas) filteredData = filteredData.filter(s => s.kelas === filterKelas);
+    if (filterStatus === 'lulus') {
+        filteredData = filteredData.filter(s => s.lulus);
+    } else if (filterStatus === 'tidak-lulus') {
+        // Hanya tampilkan yang tidak lulus dan sudah memulai ujian
+        filteredData = filteredData.filter(s => !s.lulus && s.progress > 0);
+    }
     if (searchTerm) filteredData = filteredData.filter(s => s.nama.toLowerCase().includes(searchTerm) || s.id.toLowerCase().includes(searchTerm));
 
     // --- Paginate Data ---
@@ -2644,6 +2649,87 @@ function startApp() {
 }
 
 function initializeAppUI() {
+    // --- Pull-to-Refresh Logic untuk Dasbor ---
+    const dashMain = document.getElementById('dash-main');
+    const dashContent = document.getElementById('dash-content');
+    const ptrIndicator = document.getElementById('ptr-indicator');
+    const ptrIcon = document.getElementById('ptr-icon');
+
+    let ptrStartY = 0;
+    let ptrCurrentY = 0;
+    let isPulling = false;
+    const ptrThreshold = 70; // Jarak tarik untuk memicu refresh
+
+    if (dashMain && dashContent && ptrIndicator && ptrIcon) {
+        dashMain.addEventListener('touchstart', (e) => {
+            if (dashMain.scrollTop === 0) {
+                ptrStartY = e.touches[0].clientY;
+                isPulling = true;
+                dashContent.style.transition = 'none';
+                ptrIndicator.style.transition = 'none';
+            }
+        }, { passive: true });
+
+        dashMain.addEventListener('touchmove', (e) => {
+            if (!isPulling) return;
+            ptrCurrentY = e.touches[0].clientY;
+            const pullDistance = ptrCurrentY - ptrStartY;
+
+            if (pullDistance > 0 && dashMain.scrollTop === 0) {
+                if (e.cancelable) e.preventDefault(); // Mencegah overscroll bawaan browser
+                const visualDistance = Math.min(pullDistance * 0.4, ptrThreshold + 30);
+
+                ptrIndicator.style.height = `${visualDistance}px`;
+                ptrIndicator.style.opacity = Math.min(visualDistance / ptrThreshold, 1).toString();
+                dashContent.style.transform = `translateY(${visualDistance}px)`;
+
+                if (visualDistance >= ptrThreshold) {
+                    ptrIcon.innerText = 'refresh';
+                    ptrIcon.classList.add('animate-spin');
+                } else {
+                    ptrIcon.innerText = 'arrow_downward';
+                    ptrIcon.classList.remove('animate-spin');
+                }
+            } else {
+                isPulling = false;
+            }
+        }, { passive: false });
+
+        dashMain.addEventListener('touchend', () => {
+            if (!isPulling) return;
+            isPulling = false;
+            const pullDistance = ptrCurrentY - ptrStartY;
+
+            dashContent.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            ptrIndicator.style.transition = 'height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s';
+
+            if (pullDistance >= ptrThreshold && dashMain.scrollTop === 0) {
+                // Trigger refresh
+                ptrIndicator.style.height = '60px';
+                dashContent.style.transform = 'translateY(60px)';
+                ptrIcon.innerText = 'refresh';
+                ptrIcon.classList.add('animate-spin');
+
+                // Ambil data terbaru dari Firebase
+                loadState();
+
+                // Kembalikan tampilan setelah jeda singkat
+                setTimeout(() => {
+                    ptrIndicator.style.height = '0px';
+                    ptrIndicator.style.opacity = '0';
+                    dashContent.style.transform = 'translateY(0px)';
+                    setTimeout(() => ptrIcon.classList.remove('animate-spin'), 300);
+                }, 1000);
+            } else {
+                // Batal tarik (tidak mencapai threshold)
+                ptrIndicator.style.height = '0px';
+                ptrIndicator.style.opacity = '0';
+                dashContent.style.transform = 'translateY(0px)';
+                ptrIcon.classList.remove('animate-spin');
+            }
+        });
+    }
+
     // Populate score radio buttons
     const radioContainerStandar = document.getElementById('nilai-radio-container-standar');
     if (radioContainerStandar) {
@@ -2742,8 +2828,8 @@ function initializeAppUI() {
     });
 
     document.getElementById('btn-save-settings').addEventListener('click', () => {
-        appSettings.schoolName = document.getElementById('setting-input-school-name').value;
         appSettings.appName = document.getElementById('setting-input-app-name').value.replace(' ', '<br>');
+        appSettings.schoolName = document.getElementById('setting-input-school-name').value.trim();
         saveSettings();
         applySettings();
         openAlert("Pengaturan berhasil disimpan.");

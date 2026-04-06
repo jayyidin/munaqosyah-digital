@@ -2,6 +2,7 @@
 
 body {
     font-family: 'Inter', sans-serif;
+    animation: fadeIn 0.4s ease-out forwards;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -24,6 +25,63 @@ h4,
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Animasi Entri Aplikasi */
+@keyframes logo-entry {
+    0% {
+        transform: scale(0.5) rotate(-30deg);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.1) rotate(10deg);
+        opacity: 1;
+    }
+
+    80% {
+        transform: scale(0.95) rotate(-5deg);
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes content-entry {
+    0% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.loader-logo-animate {
+    animation: logo-entry 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.loader-text-animate,
+.loader-spinner-animate,
+.form-entry-animate {
+    animation: content-entry 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0;
+}
+
+.loader-text-animate {
+    animation-delay: 0.2s;
+}
+
+.loader-spinner-animate {
+    animation-delay: 0.3s;
+}
+
+.form-entry-animate {
+    animation-delay: 0.4s;
 }
 
 .animate-view {
