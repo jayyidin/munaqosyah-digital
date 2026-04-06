@@ -158,14 +158,30 @@ function applySettings() {
     const logoUrl = appSettings.logoUrl;
     const sidebarLogoImg = document.getElementById('app-logo-sidebar');
     const sidebarLogoIcon = document.getElementById('app-logo-icon-sidebar');
+    const loaderLogoImg = document.getElementById('app-logo-loader');
+    const loaderLogoIcon = document.getElementById('app-logo-icon-loader');
+    const loaderAppName = document.getElementById('app-name-loader');
+
+    if (loaderAppName) loaderAppName.innerHTML = appSettings.appName;
 
     if (logoUrl && sidebarLogoImg && sidebarLogoIcon) {
         sidebarLogoImg.src = logoUrl;
         sidebarLogoImg.classList.remove('hidden');
         sidebarLogoIcon.classList.add('hidden');
+
+        if (loaderLogoImg && loaderLogoIcon) {
+            loaderLogoImg.src = logoUrl;
+            loaderLogoImg.classList.remove('hidden');
+            loaderLogoIcon.classList.add('hidden');
+        }
     } else if (sidebarLogoImg && sidebarLogoIcon) {
         sidebarLogoImg.classList.add('hidden');
         sidebarLogoIcon.classList.remove('hidden');
+
+        if (loaderLogoImg && loaderLogoIcon) {
+            loaderLogoImg.classList.add('hidden');
+            loaderLogoIcon.classList.remove('hidden');
+        }
     }
 
     // Apply school name to Peserta page title
@@ -2481,6 +2497,7 @@ function handleLogout(skipConfirm = false) {
                 localStorage.removeItem('currentView');
                 localStorage.removeItem('currentStudentId');
                 localStorage.removeItem('currentKategori');
+                localStorage.removeItem('isLoggedIn');
                 auth.signOut().catch((error) => console.error('Sign out error', error));
             }
         });
@@ -2490,6 +2507,7 @@ function handleLogout(skipConfirm = false) {
     localStorage.removeItem('currentView');
     localStorage.removeItem('currentStudentId');
     localStorage.removeItem('currentKategori');
+    localStorage.removeItem('isLoggedIn');
     auth.signOut().catch((error) => console.error('Sign out error', error));
 }
 
@@ -2619,7 +2637,8 @@ function startApp() {
             });
         } else {
             // User is signed out. Redirect to login.
-            window.location.href = 'login.html';
+            localStorage.removeItem('isLoggedIn');
+            window.location.replace('login.html');
         }
     });
 }

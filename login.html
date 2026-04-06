@@ -12,6 +12,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet" />
 
+    <!-- Otomatis masuk ke dasbor jika sesi masih tersimpan -->
+    <script>
+        if (localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.replace('index.html');
+        }
+    </script>
+
     <link rel="stylesheet" href="style.css">
     <script id="tailwind-config">
         tailwind.config = {
