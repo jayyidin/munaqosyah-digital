@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Login - Munaqosyah Digital</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="style.css">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary-container": "#bda0ff",
+                        "tertiary-container": "#5024a3",
+                        "on-secondary-container": "#526772",
+                        "on-primary-fixed": "#002022",
+                        "on-primary-container": "#7fbabf",
+                        "tertiary": "#390087",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#96d1d6",
+                        "on-secondary-fixed-variant": "#354a53",
+                        "secondary-fixed": "#cfe6f2",
+                        "on-background": "#191c1c",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed-dim": "#96d1d6",
+                        "outline-variant": "#bfc8c9",
+                        "on-primary-fixed-variant": "#074f54",
+                        "surface-bright": "#f8faf9",
+                        "surface-container-highest": "#e1e3e3",
+                        "surface-tint": "#2a676c",
+                        "primary-fixed": "#b1edf2",
+                        "surface": "#f8faf9",
+                        "primary-container": "#004b50",
+                        "surface-container-high": "#e7e8e8",
+                        "surface-container-low": "#f2f4f4",
+                        "surface-variant": "#e1e3e3",
+                        "surface-dim": "#d9dada",
+                        "on-secondary-fixed": "#071e27",
+                        "tertiary-fixed": "#eaddff",
+                        "on-tertiary-fixed-variant": "#5429a7",
+                        "secondary": "#4c616c",
+                        "on-tertiary-fixed": "#24005b",
+                        "background": "#f8faf9",
+                        "primary": "#003336",
+                        "on-surface": "#191c1c",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#edeeee",
+                        "inverse-surface": "#2e3131",
+                        "outline": "#707979",
+                        "secondary-fixed-dim": "#b4cad6",
+                        "inverse-on-surface": "#eff1f1",
+                        "secondary-container": "#cfe6f2",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#404849",
+                        "on-error": "#ffffff",
+                        "tertiary-fixed-dim": "#d1bcff",
+                        "on-error-container": "#93000a"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script src="login.js" defer></script>
+</head>
+
+<body class="bg-surface flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center gap-3 mb-2">
+                <div
+                    class="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-md overflow-hidden">
+                    <img id="app-logo-login" src="" alt="Logo" class="w-full h-full object-contain p-2 hidden">
+                    <span id="app-logo-icon-login" class="material-symbols-outlined text-2xl">school</span>
+                </div>
+                <div>
+                    <h1 id="app-name-login" class="text-2xl font-extrabold text-teal-950 leading-tight text-left">
+                        Al-Hikmah<br>Academy</h1>
+                </div>
+            </div>
+            <p class="text-gray-500 font-medium mt-4">Silakan masuk untuk melanjutkan ke dasbor</p>
+        </div>
+
+        <!-- Login View -->
+        <div id="login-view">
+            <form id="login-form" class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 space-y-6">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-teal-950">Username</label>
+                    <input type="text" id="username"
+                        class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                        placeholder="Masukkan username">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-teal-950">Kata Sandi</label>
+                    <div class="relative">
+                        <input type="password" id="password"
+                            class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                            placeholder="••••••••">
+                        <button id="toggle-password" type="button"
+                            class="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-primary">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <label class="flex items-center gap-2 text-gray-600 font-medium">
+                        <input type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary/50"> Ingat
+                        Saya
+                    </label>
+                    <a href="#"
+                        onclick="event.preventDefault(); alert('Fitur Lupa Kata Sandi belum diimplementasikan.');"
+                        class="font-bold text-primary hover:underline">Lupa Kata Sandi?</a>
+                </div>
+
+                <!-- Container untuk pesan galat -->
+                <div id="login-error"
+                    class="hidden bg-red-50 p-3 rounded-lg text-center text-xs font-bold text-red-600 border border-red-200">
+                    <!-- Pesan galat akan muncul di sini -->
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-teal-900 transition-colors flex items-center justify-center gap-2 disabled:bg-teal-800 disabled:cursor-not-allowed">
+                    Masuk ke Dasbor
+                </button>
+            </form>
+            <p class="text-center text-sm text-gray-500 mt-6">Belum punya akun? <a href="#" id="show-register"
+                    class="font-bold text-primary hover:underline">Daftar di sini</a></p>
+        </div>
+
+        <!-- Register View -->
+        <div id="register-view" class="hidden">
+            <form id="register-form" class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 space-y-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-teal-950">Nama Lengkap</label>
+                    <input type="text" id="register-name"
+                        class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                        placeholder="Masukkan nama lengkap">
+                </div>
+                <div id="auto-username-container" class="hidden space-y-1">
+                    <label class="text-[10px] font-bold text-teal-950">Username Anda (Otomatis)</label>
+                    <div id="auto-username-display"
+                        class="w-full h-12 bg-gray-100 border border-gray-200 rounded-lg px-4 text-sm flex items-center text-gray-600 font-medium">
+                        <!-- Username akan muncul di sini -->
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-teal-950">Kata Sandi</label>
+                    <input type="password" id="register-password"
+                        class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                        placeholder="Minimal 6 karakter">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-teal-950">Konfirmasi Kata Sandi</label>
+                    <input type="password" id="register-password-confirm"
+                        class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                        placeholder="Ulangi kata sandi">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-bold text-teal-950">Token Pendaftaran</label>
+                    <input type="text" id="register-token"
+                        class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                        placeholder="Masukkan token pendaftaran">
+                </div>
+
+                <div id="register-error"
+                    class="hidden bg-red-50 p-3 rounded-lg text-center text-xs font-bold text-red-600 border border-red-200">
+                </div>
+
+                <button type="submit"
+                    class="w-full py-3 bg-teal-700 text-white font-bold rounded-xl shadow-lg shadow-teal-700/20 hover:bg-teal-900 transition-colors flex items-center justify-center gap-2 disabled:bg-teal-800 disabled:cursor-not-allowed">
+                    Buat Akun
+                </button>
+            </form>
+            <p class="text-center text-sm text-gray-500 mt-6">Sudah punya akun? <a href="#" id="show-login"
+                    class="font-bold text-primary hover:underline">Masuk di sini</a></p>
+        </div>
+
+        <p class="text-center text-xs text-gray-400 mt-8">© 2024 Al Fityan School Bogor. All rights reserved.</p>
+    </div>
+
+</body>
+
+</html>
