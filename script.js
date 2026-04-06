@@ -234,6 +234,11 @@ function applyUserContext() {
         navPengaturan.style.display = (currentUser.role === 'Admin Utama') ? 'flex' : 'none';
     }
 
+    const mobileNavPengaturan = document.getElementById('mobile-nav-pengaturan');
+    if (mobileNavPengaturan) {
+        mobileNavPengaturan.style.display = (currentUser.role === 'Admin Utama') ? 'flex' : 'none';
+    }
+
     // Show/hide participant management buttons based on role
     const isAdmin = currentUser.role === 'Admin Utama';
     const btnTambahPeserta = document.getElementById('btn-buka-modal-tambah-peserta');
@@ -262,20 +267,7 @@ function toggleSidebar() {
     const isMobile = window.innerWidth < 768;
 
     if (isMobile) {
-        // Mobile behavior: toggle slide-over transform and backdrop
-        if (sidebar.classList.contains('-translate-x-full')) {
-            sidebar.classList.remove('-translate-x-full');
-            if (backdrop) {
-                backdrop.classList.remove('hidden');
-                setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
-            }
-        } else {
-            sidebar.classList.add('-translate-x-full');
-            if (backdrop) {
-                backdrop.classList.add('opacity-0');
-                setTimeout(() => backdrop.classList.add('hidden'), 300);
-            }
-        }
+        // Mobile behavior is disabled as we use bottom navigation bar now
         return;
     }
 
@@ -351,19 +343,6 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
     loader.classList.remove('opacity-0', 'pointer-events-none');
     loader.classList.add('opacity-100');
 
-    // Tutup menu sidebar saat berpindah tampilan jika sedang di mode ponsel
-    if (window.innerWidth < 768) {
-        const sidebar = document.getElementById('sidebar');
-        const backdrop = document.getElementById('sidebar-backdrop');
-        if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
-            sidebar.classList.add('-translate-x-full');
-            if (backdrop) {
-                backdrop.classList.add('opacity-0');
-                setTimeout(() => backdrop.classList.add('hidden'), 300);
-            }
-        }
-    }
-
     setTimeout(() => {
         localStorage.setItem('currentView', viewName);
         ['dashboard', 'peserta', 'ujian', 'laporan', 'pengaturan', 'penilaian-detail'].forEach(v => {
@@ -378,6 +357,19 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
                 const isActive = viewName === n;
                 el.className = isActive ? "flex items-center gap-3 px-4 py-3 rounded-lg text-teal-950 font-bold border-l-4 border-tertiary-container bg-white shadow-sm transition-all" : "flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all";
                 if (el.querySelector('.material-symbols-outlined')) el.querySelector('.material-symbols-outlined').style.color = isActive ? 'var(--tertiary-container)' : '';
+            }
+
+            // Update mobile bottom nav
+            const mobileEl = document.getElementById('mobile-nav-' + n);
+            if (mobileEl) {
+                const isActive = viewName === n;
+                mobileEl.className = isActive
+                    ? "flex flex-col items-center p-2 text-primary transition-all min-w-[60px] scale-110"
+                    : "flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all min-w-[60px]";
+                const mobileSpan = mobileEl.querySelector('span:not(.material-symbols-outlined)');
+                if (mobileSpan) mobileSpan.className = isActive ? "text-[10px] font-bold" : "text-[10px] font-semibold";
+                const mobileIcon = mobileEl.querySelector('.material-symbols-outlined');
+                if (mobileIcon) mobileIcon.style.fontVariationSettings = isActive ? "'FILL' 1, 'wght' 600" : "'FILL' 0, 'wght' 400";
             }
         });
 
@@ -2359,6 +2351,8 @@ function hapusAkunPenguji(username) {
     });
 }
 
+let tempImportData = []; // Array sementara untuk menampung pratinjau impor
+
 function switchTabTambah(tabName) {
     const isManual = tabName === 'manual';
 
@@ -2377,7 +2371,25 @@ function switchTabTambah(tabName) {
 
     // Toggle button visibility
     document.getElementById('btn-simpan-manual').classList.toggle('hidden', !isManual);
-    document.getElementById('btn-impor-data').classList.toggle('hidden', isManual);
+
+    if (isManual) {
+        document.getElementById('btn-pratinjau-impor').classList.add('hidden');
+        document.getElementById('btn-batal-pratinjau').classList.add('hidden');
+        document.getElementById('btn-simpan-impor-final').classList.add('hidden');
+        document.getElementById('btn-batal-modal').classList.remove('hidden');
+    } else {
+        resetPratinjauImpor();
+    }
+}
+
+function resetPratinjauImpor() {
+    document.getElementById('import-step-1').classList.remove('hidden');
+    document.getElementById('import-step-2').classList.add('hidden');
+    document.getElementById('btn-pratinjau-impor').classList.remove('hidden');
+    document.getElementById('btn-batal-pratinjau').classList.add('hidden');
+    document.getElementById('btn-simpan-impor-final').classList.add('hidden');
+    document.getElementById('btn-batal-modal').classList.remove('hidden');
+    tempImportData = [];
 }
 
 function bukaModalTambahPeserta() {
@@ -2419,7 +2431,13 @@ function bukaModalTambahPeserta() {
 
     document.getElementById('modal-tambah-peserta').classList.replace('hidden', 'flex');
 }
-function tutupModalTambahPeserta() { document.getElementById('modal-tambah-peserta').classList.replace('flex', 'hidden'); }
+function tutupModalTambahPeserta() {
+    document.getElementById('modal-tambah-peserta').classList.replace('flex', 'hidden');
+    document.getElementById('tambah-nama').value = '';
+    document.getElementById('tambah-pembimbing').value = '';
+    document.getElementById('import-textarea').value = '';
+    switchTabTambah('manual');
+}
 
 function simpanPesertaBaru() {
     const nama = document.getElementById('tambah-nama').value.trim();

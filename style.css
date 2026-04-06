@@ -4,6 +4,7 @@ body {
     font-family: 'Inter', sans-serif;
     animation: fadeIn 0.4s ease-out forwards;
     -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
 }
 
 h1,
