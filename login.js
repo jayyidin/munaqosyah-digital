@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const registerNameInput = document.getElementById('register-name');
     const autoUsernameContainer = document.getElementById('auto-username-container');
     const autoUsernameDisplay = document.getElementById('auto-username-display');
+    const modalSuccess = document.getElementById('modal-success');
+    const btnCloseSuccessModal = document.getElementById('btn-close-success-modal');
 
     // Logika untuk toggle visibilitas password
     if (togglePassword && passwordInput) {
@@ -137,6 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (loginSuccessful) {
                     // 4. Login Berhasil - Redirect will be handled by onAuthStateChanged in script.js
                     localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('currentView', 'dashboard');
+                    localStorage.removeItem('currentStudentId');
+                    localStorage.removeItem('currentKategori');
                     window.location.href = 'index.html';
                 } else {
                     // 5. Login Gagal (Kredensial Salah)
@@ -212,9 +217,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 fakeApiRegister(name, generatedUsername, password)
                     .then(result => {
                         if (result.success) {
-                            // Pendaftaran berhasil. Tampilkan notifikasi dan kembali ke halaman login.
-                            alert('Pendaftaran berhasil! Akun Anda telah dibuat. Silakan kembali ke halaman login untuk masuk.');
-                            switchToLoginView();
+                            // Tampilkan pop-up sukses profesional
+                            if (modalSuccess) {
+                                modalSuccess.classList.replace('hidden', 'flex');
+                            } else {
+                                alert('Pendaftaran berhasil! Akun Anda telah dibuat. Silakan kembali ke halaman login untuk masuk.');
+                                switchToLoginView();
+                            }
                         }
                     }).catch(error => {
                         showRegisterError(error.message);
@@ -237,6 +246,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 autoUsernameContainer.classList.add('hidden');
             }
+        });
+    }
+
+    // Menutup modal sukses pendaftaran dan mengarahkan ke form login
+    if (btnCloseSuccessModal) {
+        btnCloseSuccessModal.addEventListener('click', () => {
+            modalSuccess.classList.replace('flex', 'hidden');
+            switchToLoginView();
         });
     }
 

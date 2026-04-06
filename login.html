@@ -103,7 +103,7 @@
 
         <!-- Login View -->
         <div id="login-view">
-            <form id="login-form" class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 space-y-6">
+            <form id="login-form" class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-100 space-y-6">
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-teal-950">Username</label>
                     <input type="text" id="username"
@@ -149,7 +149,7 @@
 
         <!-- Register View -->
         <div id="register-view" class="hidden">
-            <form id="register-form" class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 space-y-4">
+            <form id="register-form" class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-gray-100 space-y-4">
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-teal-950">Nama Lengkap</label>
                     <input type="text" id="register-name"
@@ -195,7 +195,29 @@
                     class="font-bold text-primary hover:underline">Masuk di sini</a></p>
         </div>
 
-        <p class="text-center text-xs text-gray-400 mt-8">© 2024 Al Fityan School Bogor. All rights reserved.</p>
+        <p class="text-center text-xs text-gray-400 mt-8">© 2026 Juman Jayyidin</p>
+    </div>
+
+    <!-- Modal Success Registration -->
+    <div id="modal-success" class="fixed inset-0 z-[200] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-teal-950/60 backdrop-blur-sm"></div>
+        <div
+            class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
+            <div class="p-6 text-center">
+                <div
+                    class="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="material-symbols-outlined text-4xl">check_circle</span>
+                </div>
+                <h3 class="font-headline font-bold text-xl text-teal-950 mb-2">Pendaftaran Berhasil!</h3>
+                <p class="text-sm text-gray-500 font-medium">Akun penguji Anda telah berhasil dibuat. Silakan masuk
+                    menggunakan username dan kata sandi yang baru saja Anda daftarkan.</p>
+            </div>
+            <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-center">
+                <button id="btn-close-success-modal"
+                    class="w-full py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm hover:bg-teal-900 transition-colors text-sm">Masuk
+                    ke Dasbor</button>
+            </div>
+        </div>
     </div>
 
 </body>

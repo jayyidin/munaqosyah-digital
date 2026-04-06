@@ -60,8 +60,8 @@ function seedInitialData() {
 function loadState() {
     const loader = document.getElementById('loading-overlay');
     if (loader && !isAppInitialized) {
-        loader.classList.replace('opacity-0', 'opacity-100');
-        loader.classList.remove('pointer-events-none');
+        loader.classList.remove('opacity-0', 'pointer-events-none');
+        loader.classList.add('opacity-100');
     }
 
     db.ref('appState').on('value', (snapshot) => {
@@ -88,8 +88,13 @@ function loadState() {
             initializeAppUI();
             isAppInitialized = true;
             if (loader) {
-                loader.classList.replace('opacity-100', 'opacity-0');
+                loader.classList.remove('opacity-100');
+                loader.classList.add('opacity-0');
                 loader.classList.add('pointer-events-none');
+                setTimeout(() => {
+                    loader.classList.replace('bg-surface', 'bg-white/50');
+                    loader.classList.add('backdrop-blur-sm');
+                }, 300);
             }
         } else {
             // Perbarui data di layar secara real-time tanpa me-reset UI
@@ -104,7 +109,8 @@ function loadState() {
         console.error("Gagal memuat state dari Firebase:", error);
         openAlert("Gagal memuat data dari server. Silakan muat ulang halaman.");
         if (loader && !isAppInitialized) {
-            loader.classList.replace('opacity-100', 'opacity-0');
+            loader.classList.remove('opacity-100');
+            loader.classList.add('opacity-0');
             loader.classList.add('pointer-events-none');
         }
     });
@@ -232,52 +238,67 @@ function toggleSidebar() {
     const sidebarFooter = sidebar.querySelector('.mt-auto'); // The div containing toggle and logout
     const sidebarFooterLinks = sidebarFooter.querySelectorAll('a');
 
-    if (sidebar.classList.contains('w-64')) {
-        // Collapse sidebar
-        sidebar.classList.remove('w-64', 'px-4');
-        sidebar.classList.add('w-16', 'px-2'); // Collapsed width and padding
-        sidebar.classList.add('overflow-hidden'); // Hide overflowing content
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const isMobile = window.innerWidth < 768;
 
-        // Hide text elements and adjust alignment
-        sidebarLogoArea.classList.add('hidden');
-        logoutText.classList.add('hidden');
-        sidebarNavLinks.forEach(link => {
-            link.querySelector('span:not(.material-symbols-outlined)').classList.add('hidden'); // Hide nav item text
-            link.classList.remove('justify-start', 'gap-3', 'px-4');
-            link.classList.add('justify-center', 'px-2'); // Center icons and adjust padding
-        });
-
-        sidebarToggleIcon.textContent = 'chevron_right';
-        sidebarToggleText.classList.add('hidden'); // Hide toggle button text
-        sidebarFooter.classList.remove('pt-6');
-        sidebarFooter.classList.add('pt-2');
-        sidebarFooterLinks.forEach(link => {
-            link.classList.remove('gap-3', 'px-4');
-            link.classList.add('justify-center', 'px-2');
-        });
+    if (isMobile) {
+        // Mobile behavior: toggle slide-over transform and backdrop
+        if (sidebar.classList.contains('-translate-x-full')) {
+            sidebar.classList.remove('-translate-x-full');
+            if (backdrop) backdrop.classList.replace('hidden', 'block');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            if (backdrop) backdrop.classList.replace('block', 'hidden');
+        }
     } else {
-        // Expand sidebar
-        sidebar.classList.remove('w-16', 'px-2');
-        sidebar.classList.add('w-64', 'px-4'); // Expanded width and padding
-        sidebar.classList.remove('overflow-hidden');
+        // Desktop behavior: Collapse/Expand width
+        if (sidebar.classList.contains('w-64')) {
+            // Collapse sidebar
+            sidebar.classList.remove('w-64', 'px-4');
+            sidebar.classList.add('w-16', 'px-2'); // Collapsed width and padding
+            sidebar.classList.add('overflow-hidden'); // Hide overflowing content
 
-        // Show text elements and adjust alignment
-        sidebarLogoArea.classList.remove('hidden');
-        logoutText.classList.remove('hidden');
-        sidebarNavLinks.forEach(link => {
-            link.querySelector('span:not(.material-symbols-outlined)').classList.remove('hidden');
-            link.classList.remove('justify-center', 'px-2');
-            link.classList.add('justify-start', 'gap-3', 'px-4');
-        });
+            // Hide text elements and adjust alignment
+            sidebarLogoArea.classList.add('hidden');
+            logoutText.classList.add('hidden');
+            sidebarNavLinks.forEach(link => {
+                link.querySelector('span:not(.material-symbols-outlined)').classList.add('hidden'); // Hide nav item text
+                link.classList.remove('justify-start', 'gap-3', 'px-4');
+                link.classList.add('justify-center', 'px-2'); // Center icons and adjust padding
+            });
 
-        sidebarToggleIcon.textContent = 'chevron_left';
-        sidebarToggleText.classList.remove('hidden');
-        sidebarFooter.classList.remove('pt-2');
-        sidebarFooter.classList.add('pt-6');
-        sidebarFooterLinks.forEach(link => {
-            link.classList.remove('justify-center', 'px-2');
-            link.classList.add('gap-3', 'px-4');
-        });
+            sidebarToggleIcon.textContent = 'chevron_right';
+            sidebarToggleText.classList.add('hidden'); // Hide toggle button text
+            sidebarFooter.classList.remove('pt-6');
+            sidebarFooter.classList.add('pt-2');
+            sidebarFooterLinks.forEach(link => {
+                link.classList.remove('gap-3', 'px-4');
+                link.classList.add('justify-center', 'px-2');
+            });
+        } else {
+            // Expand sidebar
+            sidebar.classList.remove('w-16', 'px-2');
+            sidebar.classList.add('w-64', 'px-4'); // Expanded width and padding
+            sidebar.classList.remove('overflow-hidden');
+
+            // Show text elements and adjust alignment
+            sidebarLogoArea.classList.remove('hidden');
+            logoutText.classList.remove('hidden');
+            sidebarNavLinks.forEach(link => {
+                link.querySelector('span:not(.material-symbols-outlined)').classList.remove('hidden');
+                link.classList.remove('justify-center', 'px-2');
+                link.classList.add('justify-start', 'gap-3', 'px-4');
+            });
+
+            sidebarToggleIcon.textContent = 'chevron_left';
+            sidebarToggleText.classList.remove('hidden');
+            sidebarFooter.classList.remove('pt-2');
+            sidebarFooter.classList.add('pt-6');
+            sidebarFooterLinks.forEach(link => {
+                link.classList.remove('justify-center', 'px-2');
+                link.classList.add('gap-3', 'px-4');
+            });
+        }
     }
 }
 
@@ -296,7 +317,18 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
 
     if (!forceRender && getCurrentVisibleView() === viewName) return;
     const loader = document.getElementById('loading-overlay');
-    loader.classList.replace('opacity-0', 'opacity-100'); loader.classList.remove('pointer-events-none');
+    loader.classList.remove('opacity-0', 'pointer-events-none');
+    loader.classList.add('opacity-100');
+
+    // Tutup menu sidebar saat berpindah tampilan jika sedang di mode ponsel
+    if (window.innerWidth < 768) {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+            sidebar.classList.add('-translate-x-full');
+            if (backdrop) backdrop.classList.replace('block', 'hidden');
+        }
+    }
 
     setTimeout(() => {
         localStorage.setItem('currentView', viewName);
@@ -346,7 +378,8 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
             switchSettingsTab('umum'); // Reset to default tab
         }
 
-        loader.classList.replace('opacity-100', 'opacity-0'); loader.classList.add('pointer-events-none');
+        loader.classList.remove('opacity-100');
+        loader.classList.add('opacity-0', 'pointer-events-none');
     }, 300);
 }
 
@@ -763,7 +796,10 @@ function renderTablePeserta() {
             const tanggalUjianFormatted = p.tanggalUjian
                 ? new Date(p.tanggalUjian + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
                 : '-';
-            const actionCell = isAdmin ? `<td class="px-4 py-4 text-center"><button class="text-gray-400 hover:text-red-500" onclick="event.stopPropagation(); hapusPesertaTunggal('${p.id}', '${p.kategori}')"><span class="material-symbols-outlined text-lg">delete</span></button></td>` : '';
+            const actionCell = isAdmin ? `<td class="px-4 py-4 text-center"><div class="flex items-center justify-center gap-2">
+                <button class="text-gray-400 hover:text-blue-500 transition-colors" onclick="event.stopPropagation(); bukaModalEditPeserta('${p.id}', '${p.kategori}')" title="Edit"><span class="material-symbols-outlined text-lg">edit</span></button>
+                <button class="text-gray-400 hover:text-red-500 transition-colors" onclick="event.stopPropagation(); hapusPesertaTunggal('${p.id}', '${p.kategori}')" title="Hapus"><span class="material-symbols-outlined text-lg">delete</span></button>
+            </div></td>` : '';
 
             html += `<tr class="hover:bg-gray-50 border-b border-gray-50 transition-colors cursor-pointer" onclick="bukaProfilSiswa('${p.id}', '${p.kategori}')">
                 <td class="px-4 py-4"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full ${p.warna} flex items-center justify-center font-bold text-[10px]">${p.inisial}</div><div><span class="text-sm font-bold text-teal-950 block leading-tight">${p.nama}</span><span class="text-[9px] text-gray-500">${p.id}</span></div></div></td>
@@ -2333,6 +2369,62 @@ function imporPesertaDariTeks() {
     }
 }
 
+function bukaModalEditPeserta(id, kategori) {
+    const p = dataPeserta[kategori].find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById('edit-id-peserta').value = p.id;
+    document.getElementById('edit-kategori-hidden').value = kategori;
+    document.getElementById('edit-kategori-display').value = kategori;
+    document.getElementById('edit-nama').value = p.nama;
+
+    const kelasSelect = document.getElementById('edit-kelas');
+    kelasSelect.innerHTML = listKelas.sort().map(k => `<option value="${k}" ${k === p.kelas ? 'selected' : ''}>${k}</option>`).join('');
+
+    const tanggalSelect = document.getElementById('edit-tanggal-ujian');
+    if (appSettings.examDates && appSettings.examDates.length > 0) {
+        const sortedDates = [...appSettings.examDates].sort();
+        tanggalSelect.innerHTML = '<option value="">Pilih Tanggal</option>' + sortedDates.map(d => {
+            const date = new Date(d + 'T00:00:00');
+            const formatted = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            return `<option value="${d}" ${d === p.tanggalUjian ? 'selected' : ''}>${formatted}</option>`;
+        }).join('');
+        tanggalSelect.disabled = false;
+    } else {
+        tanggalSelect.innerHTML = '<option value="">Belum ada tanggal diatur</option>';
+        tanggalSelect.disabled = true;
+    }
+
+    document.getElementById('edit-pembimbing').value = p.pembimbing === 'Belum Ditentukan' ? '' : p.pembimbing;
+    document.getElementById('modal-edit-peserta').classList.replace('hidden', 'flex');
+}
+
+function tutupModalEditPeserta() {
+    document.getElementById('modal-edit-peserta').classList.replace('flex', 'hidden');
+}
+
+function simpanEditPeserta() {
+    const id = document.getElementById('edit-id-peserta').value;
+    const kategori = document.getElementById('edit-kategori-hidden').value;
+    const nama = document.getElementById('edit-nama').value.trim();
+    const kelas = document.getElementById('edit-kelas').value;
+    const tanggalUjian = document.getElementById('edit-tanggal-ujian').value;
+    const pembimbing = document.getElementById('edit-pembimbing').value.trim() || "Belum Ditentukan";
+
+    if (!nama || !kelas || !tanggalUjian) { openAlert("Nama, Kelas, dan Tanggal Ujian wajib diisi."); return; }
+
+    const pList = dataPeserta[kategori];
+    const pIndex = pList.findIndex(x => x.id === id);
+    if (pIndex === -1) { openAlert("Data peserta tidak ditemukan!"); return; }
+
+    pList[pIndex].nama = nama; pList[pIndex].kelas = kelas; pList[pIndex].tanggalUjian = tanggalUjian; pList[pIndex].pembimbing = pembimbing;
+    pList[pIndex].inisial = nama.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+    db.ref(`appState/dataPeserta/${kategori}`).set(pList)
+        .then(() => { tutupModalEditPeserta(); })
+        .catch(error => openAlert("Gagal menyimpan perubahan. Error: " + error.message));
+}
+
 function renderSegmenTabs() {
     const container = document.getElementById('container-segmen-tabs'); if (!container) return;
     let html = '';
@@ -2386,12 +2478,18 @@ function handleLogout(skipConfirm = false) {
     if (!skipConfirm) {
         openConfirm("Apakah Anda yakin ingin keluar dari aplikasi?", (confirmed) => {
             if (confirmed) {
+                localStorage.removeItem('currentView');
+                localStorage.removeItem('currentStudentId');
+                localStorage.removeItem('currentKategori');
                 auth.signOut().catch((error) => console.error('Sign out error', error));
             }
         });
         return;
     }
 
+    localStorage.removeItem('currentView');
+    localStorage.removeItem('currentStudentId');
+    localStorage.removeItem('currentKategori');
     auth.signOut().catch((error) => console.error('Sign out error', error));
 }
 
