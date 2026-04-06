@@ -156,7 +156,7 @@
             </div>
         </div>
 
-        <nav class="flex-1 space-y-2 overflow-y-auto hide-scrollbar">
+        <nav class="flex-1 space-y-2">
             <a id="nav-dashboard"
                 class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-950 font-bold border-l-4 border-tertiary-container bg-white shadow-sm transition-all group relative"
                 href="#" onclick="event.preventDefault(); switchView('dashboard')">
@@ -371,18 +371,6 @@
                             </div>
                         </div>
 
-                        <!-- Siswa Perlu Perhatian -->
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h3 class="font-headline font-bold text-teal-950 flex items-center gap-2 mb-4">
-                                <span class="material-symbols-outlined text-red-500 text-xl">flag</span>
-                                Siswa Perlu Perhatian
-                            </h3>
-                            <div id="dash-siswa-perhatian" class="space-y-3">
-                                <!-- Injected by JS -->
-                            </div>
-                            <div id="pagination-dash-siswa" class="flex justify-center items-center pt-4 space-x-1">
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Right Column -->
@@ -1399,7 +1387,8 @@
             class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
             <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
                 <div>
-                    <h3 class="font-headline font-bold text-lg text-teal-950">Kelola Kategori Ujian</h3>
+                    <h3 id="modal-kategori-title" class="font-headline font-bold text-lg text-teal-950">Kelola Kategori
+                        Ujian</h3>
                     <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin Utama
                     </p>
                 </div>
@@ -1410,7 +1399,8 @@
             </div>
             <div class="p-6 space-y-4">
                 <div id="list-kategori-edit" class="space-y-2 max-h-[200px] overflow-y-auto pr-1"></div>
-                <div class="pt-4 border-t border-gray-100 space-y-3">
+                <div id="form-kategori" class="pt-4 border-t border-gray-100 space-y-3">
+                    <input type="hidden" id="input-kategori-original-nama">
                     <input type="text" id="input-kategori-baru" placeholder="Nama Kategori..."
                         class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
                     <div class="flex gap-2">
@@ -1425,9 +1415,10 @@
                                 class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm"
                                 data-icon="expand_more">expand_more</span>
                         </div>
-                        <button onclick="tambahKategori()"
+                        <button id="btn-simpan-kategori" onclick="simpanKategori()"
                             class="px-4 bg-primary text-white font-bold rounded-xl hover:bg-teal-900 transition-colors shadow-sm flex items-center justify-center">
-                            <span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                            <span id="btn-simpan-kategori-icon" class="material-symbols-outlined text-[18px]"
+                                data-icon="add">add</span>
                         </button>
                     </div>
                 </div>
@@ -1447,7 +1438,8 @@
             class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
             <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
                 <div>
-                    <h3 class="font-headline font-bold text-lg text-teal-950">Kelola Daftar Kelas</h3>
+                    <h3 id="modal-kelas-title" class="font-headline font-bold text-lg text-teal-950">Kelola Daftar Kelas
+                    </h3>
                     <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin Utama
                     </p>
                 </div>
@@ -1458,12 +1450,14 @@
             </div>
             <div class="p-6 space-y-4">
                 <div id="list-kelas-edit" class="space-y-2 max-h-[250px] overflow-y-auto pr-1"></div>
-                <div class="pt-4 border-t border-gray-100 flex gap-2">
-                    <input type="text" id="input-kelas-baru" placeholder="Nama kelas baru..."
+                <div id="form-kelas" class="pt-4 border-t border-gray-100 flex gap-2">
+                    <input type="hidden" id="input-kelas-original-nama">
+                    <input type="text" id="input-kelas-baru" placeholder="Nama kelas..."
                         class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
-                    <button onclick="tambahKelas()"
-                        class="p-3 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm"><span
-                            class="material-symbols-outlined text-[18px]">add</span></button>
+                    <button id="btn-simpan-kelas" onclick="simpanKelas()"
+                        class="p-3 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm">
+                        <span id="btn-simpan-kelas-icon" class="material-symbols-outlined text-[18px]">add</span>
+                    </button>
                 </div>
             </div>
             <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end"><button
@@ -1738,7 +1732,10 @@
 
                 <!-- Form Nilai Keseluruhan (Standar) -->
                 <div class="space-y-2 hidden" id="area-nilai-standar">
-                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">Nilai</label>
+                    <div class="flex justify-between items-baseline">
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">Nilai</label>
+                        <span id="kkm-info-standar" class="text-xs font-bold text-gray-400"></span>
+                    </div>
                     <div id="nilai-radio-container-standar" class="flex flex-wrap gap-2"></div>
                 </div>
 
@@ -1763,8 +1760,11 @@
                     </div>
                     <div id="lembar-grid" class="flex flex-wrap justify-center gap-1.5 mb-4"></div>
                     <div class="mt-4">
-                        <label
-                            class="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Nilai</label>
+                        <div class="flex justify-between items-baseline mb-2">
+                            <label
+                                class="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">Nilai</label>
+                            <span id="kkm-info-lembar" class="text-xs font-bold text-gray-400"></span>
+                        </div>
                         <div id="nilai-radio-container-lembar" class="flex flex-wrap gap-2"></div>
                     </div>
                 </div>
@@ -1772,8 +1772,11 @@
                 <!-- Form Aspek Penilaian Tartil (M1) -->
                 <div id="area-nilai-tartil" class="hidden bg-amber-50/50 p-4 rounded-xl border border-amber-100 mt-2">
                     <h4
-                        class="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-3 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">rule</span> Aspek Penilaian Tartil (M1)
+                        class="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-3 flex items-center justify-between gap-1">
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">rule</span> Aspek Penilaian Tartil (M1)
+                        </span>
+                        <span id="kkm-info-tartil" class="text-xs font-bold text-gray-400"></span>
                     </h4>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <div class="space-y-1"><label class="text-[10px] font-bold text-teal-950">Muraatut Tajwid <span
@@ -1815,8 +1818,12 @@
                 <!-- Form Aspek Penilaian Fashohah (M2) -->
                 <div id="area-nilai-fashohah" class="hidden bg-blue-50/50 p-4 rounded-xl border border-blue-100 mt-2">
                     <h4
-                        class="text-[11px] font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">rule</span> Aspek Penilaian Fashohah (M2)
+                        class="text-[11px] font-bold text-blue-700 uppercase tracking-widest mb-3 flex items-center justify-between gap-1">
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">rule</span> Aspek Penilaian Fashohah
+                            (M2)
+                        </span>
+                        <span id="kkm-info-fashohah" class="text-xs font-bold text-gray-400"></span>
                     </h4>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div class="space-y-1"><label class="text-[10px] font-bold text-teal-950">Muraatul Huruf <span
@@ -1853,8 +1860,11 @@
                 <!-- Form Aspek Penilaian Ghorib (M3) -->
                 <div id="area-nilai-ghorib" class="hidden bg-purple-50/50 p-4 rounded-xl border border-purple-100 mt-2">
                     <h4
-                        class="text-[11px] font-bold text-purple-700 uppercase tracking-widest mb-3 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">rule</span> Aspek Penilaian Ghorib (M3)
+                        class="text-[11px] font-bold text-purple-700 uppercase tracking-widest mb-3 flex items-center justify-between gap-1">
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">rule</span> Aspek Penilaian Ghorib (M3)
+                        </span>
+                        <span id="kkm-info-ghorib" class="text-xs font-bold text-gray-400"></span>
                     </h4>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                         <div class="space-y-1 p-2 bg-white rounded-lg border border-gray-100 shadow-sm"><label
@@ -1941,8 +1951,11 @@
                 <div id="area-nilai-tajwid"
                     class="hidden bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 mt-2">
                     <h4
-                        class="text-[11px] font-bold text-emerald-700 uppercase tracking-widest mb-3 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[14px]">rule</span> Aspek Penilaian Tajwid (M4)
+                        class="text-[11px] font-bold text-emerald-700 uppercase tracking-widest mb-3 flex items-center justify-between gap-1">
+                        <span class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">rule</span> Aspek Penilaian Tajwid (M4)
+                        </span>
+                        <span id="kkm-info-tajwid" class="text-xs font-bold text-gray-400"></span>
                     </h4>
                     <div class="grid grid-cols-10 gap-1.5 sm:gap-2 mb-2">
                         <div

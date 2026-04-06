@@ -1405,6 +1405,14 @@ function bukaModal(surahNo) {
     currentState.surahNoEdit = surahNo;
     currentState.surahNamaEdit = surat.nama;
 
+    // NEW: Display KKM in the modal
+    const kkm = appSettings.kkm || 7;
+    const kkmText = `KKM: ${kkm}`;
+    ['standar', 'lembar', 'tartil', 'fashohah', 'ghorib', 'tajwid'].forEach(type => {
+        const el = document.getElementById(`kkm-info-${type}`);
+        if (el) el.innerText = kkmText;
+    });
+
     // Reset form
     document.getElementById('modal-penilaian').querySelectorAll('input, select, textarea').forEach(el => {
         if (el.type !== 'button' && el.type !== 'submit' && el.type !== 'radio') el.value = '';
@@ -1700,9 +1708,17 @@ function _renderPenilaianDetail(id, kat) {
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-outline-variant/20 flex items-center gap-4">
             <div class="w-16 h-16 rounded-xl ${p.warna} flex items-center justify-center text-2xl font-bold shadow-sm shrink-0">${p.inisial}</div>
             <div class="flex-1 min-w-0">
-                 <h2 class="text-xl font-headline font-black text-teal-950 truncate">${p.nama}</h2>
-                 <p class="text-xs text-gray-500 font-medium truncate">ID: ${p.id} • ${p.kelas} • ${kat}</p>
-                 <div class="flex items-center gap-3 mt-2.5">
+                 <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-xl font-headline font-black text-teal-950 truncate">${p.nama}</h2>
+                        <p class="text-xs text-gray-500 font-medium truncate">ID: ${p.id} • ${p.kelas} • ${kat}</p>
+                    </div>
+                    <div class="text-right shrink-0 ml-4 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1">
+                        <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">KKM</p>
+                        <p class="text-xl font-headline font-black text-teal-950">${appSettings.kkm || 7}</p>
+                    </div>
+                 </div>
+                 <div class="flex items-center gap-3 mt-2">
                     <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden flex-1">
                         <div class="bg-primary h-full transition-all duration-500" style="width: ${s.progress}%"></div>
                     </div>
@@ -1798,7 +1814,16 @@ function renderKategoriDropdown() {
     if (filterSelect) filterSelect.innerHTML = `<option value="">Semua Kategori</option>` + listKategori.map(k => `<option value="${k.nama}">${k.nama}</option>`).join('');
 }
 
+function resetFormKategori() {
+    document.getElementById('modal-kategori-title').innerText = 'Kelola Kategori Ujian';
+    document.getElementById('input-kategori-original-nama').value = '';
+    document.getElementById('input-kategori-baru').value = '';
+    document.getElementById('input-tipe-kategori').value = 'standar';
+    document.getElementById('btn-simpan-kategori-icon').innerText = 'add';
+}
+
 function bukaModalKategori() {
+    resetFormKategori(); // Reset to "add" mode
     renderKategoriEditList();
     document.getElementById('modal-kategori').classList.replace('hidden', 'flex');
 }
@@ -1809,6 +1834,19 @@ function tutupModalKategori() {
     if (getCurrentVisibleView() === 'peserta') {
         renderTablePeserta();
     }
+    resetFormKategori(); // Also reset on close
+}
+
+function bukaFormEditKategori(nama) {
+    const kategori = listKategori.find(k => k.nama === nama);
+    if (!kategori) return;
+
+    document.getElementById('modal-kategori-title').innerText = 'Edit Kategori';
+    document.getElementById('input-kategori-original-nama').value = nama;
+    document.getElementById('input-kategori-baru').value = nama;
+    document.getElementById('input-tipe-kategori').value = kategori.tipe;
+    document.getElementById('btn-simpan-kategori-icon').innerText = 'save';
+    document.getElementById('input-kategori-baru').focus();
 }
 
 function renderKategoriEditList() {
@@ -1818,40 +1856,92 @@ function renderKategoriEditList() {
     let html = '';
     listKategori.forEach(k => {
         const isSystem = k.isSystem || false;
+        const editButton = `<button onclick="bukaFormEditKategori('${k.nama}')" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors" title="Edit Kategori"><span class="material-symbols-outlined text-base">edit</span></button>`;
         const deleteButton = isSystem
             ? `<button disabled class="p-2 text-gray-300 cursor-not-allowed" title="Kategori sistem tidak bisa dihapus"><span class="material-symbols-outlined text-base">lock</span></button>`
-            : `<button onclick="hapusKategori('${k.nama}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><span class="material-symbols-outlined text-base">delete</span></button>`;
+            : `<button onclick="hapusKategori('${k.nama}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Hapus Kategori"><span class="material-symbols-outlined text-base">delete</span></button>`;
 
         html += `
         <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-200">
             <span class="text-sm font-bold text-teal-950 pl-2">${k.nama}</span>
-            ${deleteButton}
+            <div class="flex items-center">
+                ${editButton}
+                ${deleteButton}
+            </div>
         </div>`;
     });
     container.innerHTML = html || '<p class="text-center text-xs text-gray-400">Belum ada kategori.</p>';
 }
 
-function tambahKategori() {
+function simpanKategori() {
+    const originalNama = document.getElementById('input-kategori-original-nama').value;
+    const isEditing = !!originalNama;
+
     const namaInput = document.getElementById('input-kategori-baru');
     const tipeInput = document.getElementById('input-tipe-kategori');
     const nama = namaInput.value.trim();
     const tipe = tipeInput.value;
 
-    if (!nama) { openAlert("Nama kategori tidak boleh kosong."); return; }
-    if (listKategori.some(k => k.nama.toLowerCase() === nama.toLowerCase())) { openAlert("Nama kategori sudah ada."); return; }
+    if (!nama) {
+        openAlert("Nama kategori tidak boleh kosong.");
+        return;
+    }
 
-    const newKategori = { nama, tipe, isSystem: false };
-    const newKategoriList = [...listKategori, newKategori];
+    // Check for name collision
+    if (listKategori.some(k => k.nama.toLowerCase() === nama.toLowerCase() && k.nama !== originalNama)) {
+        openAlert("Nama kategori sudah ada.");
+        return;
+    }
 
-    const updates = {};
-    updates[`listKategori`] = newKategoriList;
+    if (isEditing) {
+        // --- EDIT LOGIC ---
+        const kategoriIndex = listKategori.findIndex(k => k.nama === originalNama);
+        if (kategoriIndex === -1) {
+            openAlert("Kategori yang akan diedit tidak ditemukan.");
+            return;
+        }
 
-    db.ref('appState').update(updates).catch(error => openAlert("Gagal menambah kategori. Error: " + error.message));
+        const updates = {};
+        const newKategoriList = [...listKategori];
+        newKategoriList[kategoriIndex] = { ...newKategoriList[kategoriIndex], nama: nama, tipe: tipe };
+        updates['appState/listKategori'] = newKategoriList;
 
-    // Local dataSurat is not in Firebase, so update it locally.
-    if (!dataSurat[nama]) dataSurat[nama] = [];
-    namaInput.value = '';
-    // The 'on' listener will update the UI, including the modal list.
+        // If name changed, we need to migrate data
+        if (originalNama !== nama) {
+            // Migrate dataPeserta
+            if (dataPeserta[originalNama]) {
+                updates[`appState/dataPeserta/${nama}`] = dataPeserta[originalNama];
+                updates[`appState/dataPeserta/${originalNama}`] = null; // Delete old key
+            }
+            // Migrate local dataSurat
+            if (dataSurat[originalNama]) {
+                dataSurat[nama] = dataSurat[originalNama];
+                delete dataSurat[originalNama];
+            }
+        }
+
+        db.ref().update(updates)
+            .then(() => {
+                openAlert(`Kategori "${originalNama}" berhasil diperbarui menjadi "${nama}".`);
+                resetFormKategori();
+                // UI will update via listener
+            })
+            .catch(error => openAlert("Gagal memperbarui kategori. Error: " + error.message));
+
+    } else {
+        // --- ADD LOGIC ---
+        const newKategori = { nama, tipe, isSystem: false };
+        const newKategoriList = [...listKategori, newKategori];
+
+        db.ref('appState/listKategori').set(newKategoriList)
+            .then(() => {
+                if (!dataSurat[nama]) dataSurat[nama] = [];
+                namaInput.value = '';
+                namaInput.focus();
+                // UI will update via listener
+            })
+            .catch(error => openAlert("Gagal menambah kategori. Error: " + error.message));
+    }
 }
 
 function hapusKategori(nama) {
@@ -1878,7 +1968,23 @@ function hapusKategori(nama) {
     });
 }
 
+function resetFormKelas() {
+    document.getElementById('modal-kelas-title').innerText = 'Kelola Daftar Kelas';
+    document.getElementById('input-kelas-original-nama').value = '';
+    document.getElementById('input-kelas-baru').value = '';
+    document.getElementById('btn-simpan-kelas-icon').innerText = 'add';
+}
+
+function bukaFormEditKelas(nama) {
+    document.getElementById('modal-kelas-title').innerText = 'Edit Kelas';
+    document.getElementById('input-kelas-original-nama').value = nama;
+    document.getElementById('input-kelas-baru').value = nama;
+    document.getElementById('btn-simpan-kelas-icon').innerText = 'save';
+    document.getElementById('input-kelas-baru').focus();
+}
+
 function bukaModalKelas() {
+    resetFormKelas();
     renderKelasEditList();
     document.getElementById('modal-kelas').classList.replace('hidden', 'flex');
 }
@@ -1890,6 +1996,7 @@ function tutupModalKelas() {
     if (kelasSelect) {
         kelasSelect.innerHTML = listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
     }
+    resetFormKelas();
 }
 
 function renderKelasEditList() {
@@ -1899,26 +2006,80 @@ function renderKelasEditList() {
     let html = '';
     listKelas.sort().forEach(namaKelas => {
         html += `
-        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-200">
+        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-200 group">
             <span class="text-sm font-bold text-teal-950 pl-2">${namaKelas}</span>
-            <button onclick="hapusKelas('${namaKelas}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><span class="material-symbols-outlined text-base">delete</span></button>
+            <div class="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="bukaFormEditKelas('${namaKelas}')" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-colors" title="Edit Kelas"><span class="material-symbols-outlined text-base">edit</span></button>
+                <button onclick="hapusKelas('${namaKelas}')" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Hapus Kelas"><span class="material-symbols-outlined text-base">delete</span></button>
+            </div>
         </div>`;
     });
     container.innerHTML = html || '<p class="text-center text-xs text-gray-400">Belum ada kelas.</p>';
 }
 
-function tambahKelas() {
+async function simpanKelas() {
+    const originalNama = document.getElementById('input-kelas-original-nama').value;
+    const isEditing = !!originalNama;
+
     const namaInput = document.getElementById('input-kelas-baru');
     const nama = namaInput.value.trim();
 
-    if (!nama) { openAlert("Nama kelas tidak boleh kosong."); return; }
-    if (listKelas.some(k => k.toLowerCase() === nama.toLowerCase())) { openAlert("Nama kelas sudah ada."); return; }
+    if (!nama) {
+        openAlert("Nama kelas tidak boleh kosong.");
+        return;
+    }
 
-    const newKelasList = [...listKelas, nama].sort();
-    db.ref('appState/listKelas').set(newKelasList)
-        .catch(error => openAlert("Gagal menambah kelas. Error: " + error.message));
+    // Check for name collision
+    if (listKelas.some(k => k.toLowerCase() === nama.toLowerCase() && k !== originalNama)) {
+        openAlert("Nama kelas sudah ada.");
+        return;
+    }
 
-    namaInput.value = '';
+    if (isEditing) {
+        // --- EDIT LOGIC ---
+        const updates = {};
+
+        // 1. Update listKelas
+        const newKelasList = listKelas.map(k => k === originalNama ? nama : k).sort();
+        updates['appState/listKelas'] = newKelasList;
+
+        // 2. Update dataPeserta
+        for (const kategori in dataPeserta) {
+            const pesertaDiKategori = dataPeserta[kategori];
+            let kategoriPerluUpdate = false;
+            const updatedPesertaDiKategori = pesertaDiKategori.map(p => {
+                if (p.kelas === originalNama) {
+                    kategoriPerluUpdate = true;
+                    return { ...p, kelas: nama };
+                }
+                return p;
+            });
+
+            if (kategoriPerluUpdate) {
+                updates[`appState/dataPeserta/${kategori}`] = updatedPesertaDiKategori;
+            }
+        }
+
+        try {
+            await db.ref().update(updates);
+            openAlert(`Kelas "${originalNama}" berhasil diperbarui menjadi "${nama}".`);
+            resetFormKelas();
+            // UI will update via listener
+        } catch (error) {
+            openAlert("Gagal memperbarui kelas. Error: " + error.message);
+        }
+
+    } else {
+        // --- ADD LOGIC ---
+        const newKelasList = [...listKelas, nama].sort();
+        db.ref('appState/listKelas').set(newKelasList)
+            .then(() => {
+                namaInput.value = '';
+                namaInput.focus();
+                // UI will update via listener
+            })
+            .catch(error => openAlert("Gagal menambah kelas. Error: " + error.message));
+    }
 }
 
 function hapusKelas(namaKelas) {
@@ -2550,16 +2711,22 @@ function generateScoreRadioButtons(radioName) {
     for (let i = 10; i >= 5; i -= 0.5) {
         scores.push(i);
     }
+    const kkm = appSettings.kkm || 7; // Get KKM
 
     scores.forEach(score => {
         const id = `${radioName}-${score.toString().replace('.', '_')}`;
+
+        let labelClasses = "block cursor-pointer select-none rounded-lg p-2 text-center w-12 font-bold border transition-colors ";
+        if (score < kkm) {
+            labelClasses += "border-red-200 bg-white text-red-600 hover:bg-red-50 peer-checked:bg-red-600 peer-checked:text-white peer-checked:border-red-600";
+        } else {
+            labelClasses += "border-gray-200 bg-white text-teal-950 hover:bg-gray-50 peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary";
+        }
+
         html += `
         <div>
             <input type="radio" name="${radioName}" id="${id}" value="${score}" class="hidden peer">
-            <label for="${id}" class="block cursor-pointer select-none rounded-lg p-2 text-center w-12 font-bold
-                border border-gray-200 bg-white text-teal-950
-                peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
-                hover:bg-gray-50 transition-colors">
+            <label for="${id}" class="${labelClasses}">
                 ${score}
             </label>
         </div>`;
