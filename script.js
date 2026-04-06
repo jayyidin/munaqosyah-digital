@@ -265,10 +265,16 @@ function toggleSidebar() {
         // Mobile behavior: toggle slide-over transform and backdrop
         if (sidebar.classList.contains('-translate-x-full')) {
             sidebar.classList.remove('-translate-x-full');
-            if (backdrop) backdrop.classList.replace('hidden', 'block');
+            if (backdrop) {
+                backdrop.classList.remove('hidden');
+                setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+            }
         } else {
             sidebar.classList.add('-translate-x-full');
-            if (backdrop) backdrop.classList.replace('block', 'hidden');
+            if (backdrop) {
+                backdrop.classList.add('opacity-0');
+                setTimeout(() => backdrop.classList.add('hidden'), 300);
+            }
         }
         return;
     }
@@ -351,7 +357,10 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
         const backdrop = document.getElementById('sidebar-backdrop');
         if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
             sidebar.classList.add('-translate-x-full');
-            if (backdrop) backdrop.classList.replace('block', 'hidden');
+            if (backdrop) {
+                backdrop.classList.add('opacity-0');
+                setTimeout(() => backdrop.classList.add('hidden'), 300);
+            }
         }
     }
 

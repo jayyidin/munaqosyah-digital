@@ -136,24 +136,29 @@
 
     <!-- Sidebar Backdrop for Mobile -->
     <div id="sidebar-backdrop"
-        class="fixed inset-0 bg-teal-950/40 z-40 hidden md:hidden transition-opacity backdrop-blur-sm"
+        class="fixed inset-0 bg-teal-950/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm md:hidden"
         onclick="toggleSidebar()"></div>
 
     <!-- SideNavBar Shell -->
     <aside id="sidebar"
-        class="w-64 h-full flex flex-col py-4 px-4 bg-slate-50 border-r border-outline-variant/10 shrink-0 absolute md:relative z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
-        <div class="mb-6 px-4">
-            <div class="flex items-center gap-3 mb-2">
+        class="w-64 h-full flex flex-col py-4 px-4 bg-slate-50 border-r border-outline-variant/10 shrink-0 fixed inset-y-0 left-0 md:relative z-50 transform -translate-x-full md:translate-x-0 transition-all duration-300 shadow-2xl md:shadow-none">
+        <div class="mb-6 px-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
                 <div
-                    class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm overflow-hidden">
+                    class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm overflow-hidden shrink-0">
                     <img id="app-logo-sidebar" src="" alt="Logo" class="w-full h-full object-contain p-1.5 hidden">
                     <span id="app-logo-icon-sidebar" class="material-symbols-outlined">import_contacts</span>
                 </div>
-                <div>
-                    <h1 id="app-name-sidebar" class="text-lg font-extrabold text-teal-950 leading-tight"></h1>
-                    <p id="school-name-sidebar" class="text-[10px] text-gray-500 font-semibold"></p>
+                <div class="min-w-0">
+                    <h1 id="app-name-sidebar" class="text-lg font-extrabold text-teal-950 leading-tight truncate"></h1>
+                    <p id="school-name-sidebar" class="text-[10px] text-gray-500 font-semibold truncate"></p>
                 </div>
             </div>
+            <button
+                class="md:hidden p-1.5 -mr-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                onclick="toggleSidebar()" title="Tutup Menu">
+                <span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+            </button>
         </div>
 
         <nav class="flex-1 space-y-2 overflow-y-auto hide-scrollbar">
