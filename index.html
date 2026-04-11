@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="overflow-x-hidden">
 
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
@@ -13,21 +14,140 @@
 
     <!-- Mencegah kilatan halaman dasbor saat belum login (FOUC) -->
     <script>
-        if (localStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.replace('login.html');
-        }
-        window.getAppTitle = function () {
+        let isAuthValid = false;
+        if (localStorage.getItem('isLoggedIn') === 'true') {
             try {
-                const settings = JSON.parse(localStorage.getItem('munaqosyahSettings'));
-                const appName = (settings.appName || 'Aplikasi Munaqosyah').replace(/<br\s*\/?>/gi, ' ');
-                const schoolName = settings.schoolName || '';
-                return schoolName ? `${appName} - ${schoolName}` : appName;
-            } catch (e) {
-                return 'Aplikasi Munaqosyah';
-            }
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                if (user && typeof user === 'object' && user.username) isAuthValid = true;
+            } catch (e) {}
         }
-        document.write('<title>' + window.getAppTitle() + '</title>');
+        
+        if (!isAuthValid) {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('currentUser');
+            window.location.replace('login.html');
+        } else {
+            window.getAppTitle = function () {
+                try {
+                    const settings = JSON.parse(localStorage.getItem('munaqosyahSettings')) || {};
+                    const appName = (settings.appName || 'Aplikasi Munaqosyah').replace(/<br\s*\/?>/gi, ' ');
+                    const schoolName = settings.schoolName || '';
+                    return schoolName ? `${appName} - ${schoolName}` : appName;
+                } catch (e) {
+                    return 'Aplikasi Munaqosyah';
+                }
+            }
+            document.write('<title>' + window.getAppTitle() + '</title>');
+        }
     </script>
+    <style>
+        @media print {
+            body > :not(#view-laporan) {
+                display: none !important;
+            }
+            #view-laporan {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: auto;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background-color: white !important;
+            }
+            #view-laporan header, #view-laporan .filter-actions, #view-laporan #pagination-laporan, #mobile-bottom-nav { display: none !important; }
+        }
+
+        /* --- DARK MODE OVERRIDES --- */
+        html.dark {
+            color-scheme: dark;
+        }
+        html.dark body, html.dark .bg-\[\#fafafa\], html.dark .bg-surface {
+            background-color: #0f172a !important; /* Slate 900 */
+            color: #f8fafc !important; /* Slate 50 */
+        }
+        html.dark .bg-white {
+            background-color: #1e293b !important; /* Slate 800 */
+        }
+        html.dark .bg-gray-50, html.dark .bg-gray-100 {
+            background-color: #0f172a !important;
+        }
+        html.dark .bg-gray-200 {
+            background-color: #334155 !important; /* Slate 700 */
+        }
+        
+        /* Typography */
+        html.dark .text-teal-950, html.dark .text-gray-900, html.dark .text-gray-800, html.dark .text-gray-700 {
+            color: #f1f5f9 !important; /* Slate 100 */
+        }
+        html.dark .text-gray-600, html.dark .text-gray-500 {
+            color: #94a3b8 !important; /* Slate 400 */
+        }
+        html.dark .text-gray-400 {
+            color: #64748b !important; /* Slate 500 */
+        }
+        html.dark .text-primary { color: #5eead4 !important; }
+        html.dark .text-teal-700 { color: #5eead4 !important; }
+        html.dark .text-emerald-700, html.dark .text-emerald-600 { color: #6ee7b7 !important; }
+        html.dark .text-blue-700, html.dark .text-blue-600 { color: #93c5fd !important; }
+        html.dark .text-indigo-700, html.dark .text-indigo-600 { color: #a5b4fc !important; }
+        html.dark .text-purple-700, html.dark .text-purple-600 { color: #c4b5fd !important; }
+        html.dark .text-amber-700, html.dark .text-amber-600, html.dark .text-amber-500 { color: #fcd34d !important; }
+        html.dark .text-orange-700, html.dark .text-orange-600 { color: #fdba74 !important; }
+        html.dark .text-red-700, html.dark .text-red-600, html.dark .text-red-500 { color: #fca5a5 !important; }
+        
+        /* Borders & Backgrounds with Opacity */
+        html.dark .border-gray-100, html.dark .border-gray-200, html.dark .border-outline-variant\/10 {
+            border-color: #334155 !important;
+        }
+        html.dark .bg-white\/80, html.dark .bg-white\/90 { background-color: rgba(30, 41, 59, 0.8) !important; }
+        html.dark .bg-gray-50\/80, html.dark .bg-gray-50\/50, html.dark .bg-gray-50\/30 { background-color: rgba(15, 23, 42, 0.8) !important; }
+        
+        html.dark .bg-teal-50, html.dark .bg-emerald-50, html.dark .bg-blue-50, html.dark .bg-indigo-50, html.dark .bg-purple-50, html.dark .bg-amber-50, html.dark .bg-orange-50, html.dark .bg-red-50 {
+            background-color: rgba(30, 41, 59, 0.6) !important;
+            border-color: #334155 !important;
+        }
+        
+        /* Alerts & Semantic Backgrounds */
+        html.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.15) !important; }
+        html.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15) !important; }
+        html.dark .border-red-100 { border-color: rgba(239, 68, 68, 0.3) !important; }
+        
+        /* Primary Buttons & Accents */
+        html.dark .bg-primary { background-color: #0d9488 !important; color: #ffffff !important; }
+        html.dark .hover\:bg-teal-900:hover { background-color: #0f766e !important; }
+        html.dark .bg-primary\/5 { background-color: rgba(45, 212, 191, 0.05) !important; }
+        html.dark .bg-primary\/10 { background-color: rgba(45, 212, 191, 0.1) !important; }
+        html.dark .bg-primary\/20 { background-color: rgba(45, 212, 191, 0.2) !important; }
+
+        /* Forms */
+        html.dark input:not([type="checkbox"]):not([type="radio"]), html.dark select, html.dark textarea {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
+        html.dark input:not([type="checkbox"]):not([type="radio"]):focus, html.dark select:focus, html.dark textarea:focus {
+            border-color: #0d9488 !important;
+            box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2) !important;
+        }
+        html.dark input::placeholder, html.dark textarea::placeholder { color: #94a3b8 !important; opacity: 1 !important; }
+        
+        /* Shadows & Layouts */
+        html.dark .shadow-sm, html.dark .shadow-md, html.dark .shadow-lg, html.dark .shadow-xl {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3) !important;
+        }
+        html.dark .shadow-2xl {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+        }
+        html.dark aside#sidebar, html.dark nav#mobile-bottom-nav {
+            background-color: rgba(30, 41, 59, 0.95) !important;
+            border-color: #334155 !important;
+        }
+        html.dark .hover\:bg-gray-50:hover, html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+        html.dark #loading-overlay { background-color: #0f172a !important; }
+    </style>
 
     <link rel="stylesheet" href="style.css">
     <script id="tailwind-config">
@@ -100,18 +220,78 @@
     </script>
 
     <!-- SCRIPT UTAMA -->
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="data.js" defer></script>
-    <script src="script.js" defer></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js" defer></script>
+    
+    <!-- File-file JS dipindahkan pelekatannya secara otomatis agar tidak error DOM -->
+    <script src="js/component-loader.js" defer></script>
+
+    <!-- Fail-safe untuk menyembunyikan loading overlay secara otomatis -->
+    <script>
+        // Menjamin layar loading hilang setelah 3 detik meskipun ada script error/lambat
+        setTimeout(function() {
+            const loader = document.getElementById('loading-overlay');
+            if (loader && !loader.classList.contains('opacity-0')) {
+                loader.classList.add('opacity-0', 'pointer-events-none');
+                console.warn("Fail-safe: Layar loading disembunyikan secara paksa karena terjadi delay.");
+                setTimeout(() => loader.remove(), 500); // Bersihkan dari DOM
+            }
+        }, 3000); 
+    </script>
+    
+    <script>
+        // Dark Mode Anti-FOUC & Logic
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                const darkIcon = btn.querySelector('.dark-icon');
+                const lightIcon = btn.querySelector('.light-icon');
+                if (isDark) {
+                    if (darkIcon) darkIcon.classList.add('hidden');
+                    if (lightIcon) lightIcon.classList.remove('hidden');
+                } else {
+                    if (darkIcon) darkIcon.classList.remove('hidden');
+                    if (lightIcon) lightIcon.classList.add('hidden');
+                }
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                const darkIcon = btn.querySelector('.dark-icon');
+                const lightIcon = btn.querySelector('.light-icon');
+                if (isDark) {
+                    if (darkIcon) darkIcon.classList.add('hidden');
+                    if (lightIcon) lightIcon.classList.remove('hidden');
+                } else {
+                    if (darkIcon) darkIcon.classList.remove('hidden');
+                    if (lightIcon) lightIcon.classList.add('hidden');
+                }
+                btn.addEventListener('click', toggleDarkMode);
+            });
+        });
+    </script>
 </head>
 
-<body class="bg-surface text-on-surface flex overflow-hidden h-screen relative">
+<body class="bg-surface text-on-surface flex overflow-hidden h-[100dvh] relative w-full max-w-[100vw] overflow-x-hidden">
+
+    <!-- Sidebar Backdrop for Mobile -->
+    <div id="sidebar-backdrop"
+        class="fixed inset-0 bg-teal-950/20 backdrop-blur-sm z-[90] hidden md:hidden transition-opacity duration-300 opacity-0"
+        onclick="toggleSidebar()"></div>
 
     <!-- Loading Overlay -->
     <div id="loading-overlay"
@@ -135,95 +315,90 @@
     </div>
 
     <!-- SideNavBar Shell -->
-    <aside id="sidebar"
-        class="hidden md:flex w-64 h-full flex-col py-4 px-4 bg-slate-50 border-r border-outline-variant/10 shrink-0 relative z-40 transition-all duration-300">
-        <div class="mb-6 px-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div
-                    class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-on-primary shadow-sm overflow-hidden shrink-0">
+    <aside id="sidebar" class="w-64 h-full flex flex-col bg-white/90 backdrop-blur-2xl border-r border-gray-200/60 shrink-0 fixed md:relative z-[100] transform -translate-x-full md:translate-x-0 transition-all duration-300 shadow-2xl md:shadow-none">
+        
+        <!-- Logo Area -->
+        <div id="sidebarLogoArea" class="h-20 flex items-center px-6 border-b border-gray-100/50 shrink-0">
+            <div class="flex items-center gap-3 w-full">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-teal-700 flex items-center justify-center text-white shadow-lg shadow-primary/30 shrink-0 overflow-hidden transition-all duration-300">
                     <img id="app-logo-sidebar" src="" alt="Logo" class="w-full h-full object-contain p-1.5 hidden">
-                    <span id="app-logo-icon-sidebar" class="material-symbols-outlined">import_contacts</span>
+                    <span id="app-logo-icon-sidebar" class="material-symbols-outlined text-[22px]">import_contacts</span>
                 </div>
-                <div class="min-w-0">
-                    <h1 id="app-name-sidebar" class="text-lg font-extrabold text-teal-950 leading-tight truncate"></h1>
-                    <p id="school-name-sidebar" class="text-[10px] text-gray-500 font-semibold truncate"></p>
+                <div class="min-w-0 transition-opacity duration-300 sidebar-text">
+                    <h1 id="app-name-sidebar" class="text-base font-extrabold text-teal-950 leading-tight truncate font-headline">Aplikasi</h1>
+                    <p id="school-name-sidebar" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest truncate">Munaqosyah</p>
                 </div>
             </div>
         </div>
 
-        <nav class="flex-1 space-y-2 overflow-y-auto hide-scrollbar">
-            <a id="nav-dashboard"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-950 font-bold border-l-4 border-tertiary-container bg-white shadow-sm transition-all group relative"
-                href="#" onclick="event.preventDefault(); switchView('dashboard')">
-                <span class="material-symbols-outlined text-tertiary-container transition-colors"
-                    data-icon="dashboard">dashboard</span>
-                <span class="font-headline text-sm font-bold transition-colors">Dasbor</span>
+        <!-- Navigation -->
+        <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 hide-scrollbar">
+            <p class="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 sidebar-text">Menu Utama</p>
+            <a id="nav-dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition-all duration-200 active:scale-95 group relative" href="#" onclick="event.preventDefault(); switchView('dashboard'); if(window.innerWidth < 768) toggleSidebar();">
+                <span class="material-symbols-outlined text-[22px]" data-icon="dashboard">dashboard</span>
+                <span class="font-headline text-sm font-bold sidebar-text truncate">Dasbor</span>
             </a>
-            <a id="nav-peserta"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all group"
-                href="#" onclick="event.preventDefault(); switchView('peserta')">
-                <span class="material-symbols-outlined group-hover:text-teal-700 transition-colors"
-                    data-icon="group">group</span>
-                <span
-                    class="font-headline text-sm font-semibold group-hover:text-teal-700 transition-colors">Peserta</span>
+            <a id="nav-peserta" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-teal-950 transition-all duration-200 active:scale-95 active:bg-gray-200 group" href="#" onclick="event.preventDefault(); switchView('peserta'); if(window.innerWidth < 768) toggleSidebar();">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform" data-icon="group">group</span>
+                <span class="font-headline text-sm font-semibold sidebar-text truncate">Peserta</span>
             </a>
-            <a id="nav-laporan"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all group"
-                href="#" onclick="event.preventDefault(); switchView('laporan')">
-                <span class="material-symbols-outlined group-hover:text-teal-700 transition-colors"
-                    data-icon="assessment">assessment</span>
-                <span
-                    class="font-headline text-sm font-semibold group-hover:text-teal-700 transition-colors">Laporan</span>
+            <a id="nav-laporan" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-teal-950 transition-all duration-200 active:scale-95 active:bg-gray-200 group" href="#" onclick="event.preventDefault(); switchView('laporan'); if(window.innerWidth < 768) toggleSidebar();">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform" data-icon="assessment">assessment</span>
+                <span class="font-headline text-sm font-semibold sidebar-text truncate">Laporan</span>
             </a>
-            <a id="nav-ujian"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all group"
-                href="#" onclick="event.preventDefault(); switchView('ujian')">
-                <span class="material-symbols-outlined group-hover:text-teal-700 transition-colors"
-                    data-icon="menu_book">menu_book</span>
-                <span
-                    class="font-headline text-sm font-semibold group-hover:text-teal-700 transition-colors">Ujian</span>
+            <a id="nav-ujian" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-teal-950 transition-all duration-200 active:scale-95 active:bg-gray-200 group" href="#" onclick="event.preventDefault(); switchView('ujian'); if(window.innerWidth < 768) toggleSidebar();">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform" data-icon="menu_book">menu_book</span>
+                <span class="font-headline text-sm font-semibold sidebar-text truncate">Ujian</span>
             </a>
-            <a id="nav-pengaturan"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all group"
-                href="#" onclick="event.preventDefault(); switchView('pengaturan')">
-                <span class="material-symbols-outlined group-hover:text-teal-700 transition-colors"
-                    data-icon="settings">settings</span>
-                <span
-                    class="font-headline text-sm font-semibold group-hover:text-teal-700 transition-colors">Pengaturan</span>
+            <a id="nav-pengaturan" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-teal-950 transition-all duration-200 active:scale-95 active:bg-gray-200 group" href="#" onclick="event.preventDefault(); switchView('pengaturan'); if(window.innerWidth < 768) toggleSidebar();">
+                <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform" data-icon="settings">settings</span>
+                <span class="font-headline text-sm font-semibold sidebar-text truncate">Pengaturan</span>
+            </a>
+            <a id="nav-penilaian-detail" class="hidden" href="#">
+                <span class="material-symbols-outlined"></span>
+                <span class="sidebar-text"></span>
             </a>
         </nav>
 
-        <div class="mt-auto pt-4 border-t border-outline-variant/20 space-y-2">
-            <a id="sidebar-toggle" href="#"
-                class="hidden md:flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all group"
-                onclick="event.preventDefault(); toggleSidebar();">
-                <span id="sidebar-toggle-icon"
-                    class="material-symbols-outlined group-hover:text-teal-700 transition-colors">chevron_left</span>
-                <span id="sidebar-toggle-text"
-                    class="font-headline text-sm font-semibold group-hover:text-teal-700 transition-colors">Tutup
-                    Menu</span>
+        <!-- Footer / Bottom Actions -->
+        <div class="p-4 border-t border-gray-100/50 space-y-1.5 shrink-0">
+            <a id="sidebar-toggle" href="#" class="hidden md:flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 transition-all group" onclick="event.preventDefault(); toggleSidebar();">
+                <span id="sidebar-toggle-icon" class="material-symbols-outlined text-[22px] group-hover:-translate-x-1 transition-transform">menu_open</span>
+                <span class="font-headline text-sm font-semibold sidebar-text truncate">Perkecil Menu</span>
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 rounded-lg text-teal-700/60 hover:bg-black/5 transition-all"
-                href="#" onclick="event.preventDefault(); handleLogout()">
-                <span class="material-symbols-outlined" data-icon="logout">logout</span>
-                <span id="logout-text" class="font-headline text-sm font-semibold">Keluar</span>
+            <a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-700 transition-all group" href="#" onclick="event.preventDefault(); handleLogout()">
+                <span class="material-symbols-outlined text-[22px] group-hover:translate-x-1 transition-transform" data-icon="logout">logout</span>
+                <span id="logout-text" class="font-headline text-sm font-bold sidebar-text truncate">Keluar</span>
             </a>
         </div>
     </aside>
 
     <!-- View: DASHBOARD (BARU) -->
-    <div id="view-dashboard" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa]">
+    <div id="view-dashboard" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] pb-[72px] md:pb-0">
         <header
             class="w-full flex justify-between items-center px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md z-30 border-b border-outline-variant/10 shrink-0">
             <div class="flex items-center gap-2 md:gap-4">
+                <button class="md:hidden p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 flex items-center justify-center transition-colors" onclick="toggleSidebar()">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
                 <h1 id="dashboard-title" class="font-headline font-extrabold text-lg tracking-tight text-teal-950">
                     Dasbor</h1>
             </div>
             <div class="flex items-center gap-6">
-                <button class="p-2 rounded-full hover:bg-teal-50 transition-colors text-teal-700/70 relative">
-                    <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                <button class="theme-toggle p-2 -mr-2 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors" title="Mode Gelap">
+                    <span class="material-symbols-outlined dark-icon">dark_mode</span>
+                    <span class="material-symbols-outlined light-icon hidden">light_mode</span>
                 </button>
-                <div class="h-6 w-[1px] bg-outline-variant/30"></div>
+                <div class="relative hidden md:block">
+                    <select id="global-semester-selector" onchange="pilihSemester(this.value)"
+                        class="w-full md:w-48 bg-white border border-gray-200 rounded-xl py-2 pl-4 pr-8 text-xs font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
+                        <!-- Options from JS -->
+                        <option>Memuat Semester...</option>
+                    </select>
+                    <span
+                        class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm">expand_more</span>
+                </div>
+                <div class="h-6 w-[1px] bg-outline-variant/30 hidden md:block"></div>
                 <div class="relative group">
                     <div class="flex items-center gap-3 cursor-pointer">
                         <div class="text-right hidden sm:block">
@@ -254,46 +429,39 @@
             </div>
         </header>
 
-        <div id="dash-content"
-            class="max-w-7xl mx-auto space-y-6 pb-24 md:pb-8 relative z-20 transition-transform duration-300">
-            <!-- Pull to Refresh Indicator -->
-            <div id="ptr-indicator"
-                class="absolute top-0 left-0 w-full flex justify-center items-center overflow-hidden transition-all duration-200 z-10"
-                style="height: 0px; opacity: 0;">
-                <div class="w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-primary">
-                    <span class="material-symbols-outlined text-lg transition-transform"
-                        id="ptr-icon">arrow_downward</span>
-                </div>
-            </div>
-
+        <main id="dash-main" class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative w-full">
             <div id="dash-content"
-                class="max-w-7xl mx-auto space-y-6 pb-20 relative z-20 transition-transform duration-300">
+                class="max-w-7xl mx-auto space-y-6 pb-6 md:pb-8 relative z-20 transition-transform duration-300">
 
                 <!-- Selamat Datang -->
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                        <h2 class="text-3xl font-extrabold text-teal-950 tracking-tight font-headline">Selamat Datang!
-                        </h2>
+                        <h2 class="text-3xl font-extrabold text-teal-950 tracking-tight font-headline" id="dash-greeting">Selamat Datang!</h2>
                         <p class="text-gray-500 font-medium mt-1">Ini adalah platform digital
                             terintegrasi yang dirancang untuk mempermudah manajemen ujian, mulai dari penjadwalan,
                             proses penilaian real-time oleh penguji, hingga rekapitulasi nilai yang akurat dan
                             transparan.
                         </p>
                     </div>
-                    <div class="relative shrink-0">
-                        <select id="dash-filter-kategori"
-                            class="w-full md:w-64 bg-white border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
-                            <!-- Options from JS -->
-                        </select>
-                        <span
-                            class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="renderDashboard()" class="hidden md:flex p-3 rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-primary hover:bg-primary/5 transition-colors shadow-sm active:scale-95" title="Segarkan Data">
+                            <span class="material-symbols-outlined text-[20px]">refresh</span>
+                        </button>
+                        <div class="relative w-full md:w-auto shrink-0">
+                            <select id="dash-filter-kategori" onchange="renderDashboard()"
+                                class="w-full md:w-64 bg-white border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
+                                <!-- Options from JS -->
+                            </select>
+                            <span
+                                class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Pintasan Cepat -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button onclick="switchView('peserta'); setTimeout(bukaModalTambahPeserta, 100);"
-                        class="bg-primary text-white p-5 rounded-2xl shadow-sm hover:-translate-y-1 transition-all flex items-center gap-4 group">
+                        class="bg-primary text-white p-5 rounded-2xl shadow-sm hover:-translate-y-1 active:scale-95 active:shadow-inner transition-all duration-200 flex items-center gap-4 group">
                         <div
                             class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
                             <span class="material-symbols-outlined text-[28px]">person_add</span>
@@ -305,7 +473,7 @@
                         </div>
                     </button>
                     <button onclick="switchView('ujian')"
-                        class="bg-teal-700 text-white p-5 rounded-2xl shadow-sm hover:-translate-y-1 transition-all flex items-center gap-4 group">
+                        class="bg-teal-700 text-white p-5 rounded-2xl shadow-sm hover:-translate-y-1 active:scale-95 active:shadow-inner transition-all duration-200 flex items-center gap-4 group">
                         <div
                             class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
                             <span class="material-symbols-outlined text-[28px]">edit_document</span>
@@ -317,7 +485,7 @@
                         </div>
                     </button>
                     <button onclick="switchView('laporan')"
-                        class="bg-[#5024a3] text-white p-5 rounded-2xl shadow-sm hover:-translate-y-1 transition-all flex items-center gap-4 group">
+                        class="bg-[#5024a3] text-white p-5 rounded-2xl shadow-sm hover:-translate-y-1 active:scale-95 active:shadow-inner transition-all duration-200 flex items-center gap-4 group">
                         <div
                             class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white shrink-0">
                             <span class="material-symbols-outlined text-[28px]">print</span>
@@ -422,241 +590,267 @@
                 </div>
 
             </div>
-            </main>
+        </main>
         </div>
 
         <!-- View: PESERTA (DIPERBARUI) -->
-        <div id="view-peserta" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] hidden">
-            <header
-                class="w-full flex justify-between items-center px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md z-30 border-b border-outline-variant/10 shrink-0 gap-2">
+    <div id="view-peserta" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] pb-[72px] md:pb-0 hidden">
+            <header class="w-full flex justify-between items-center px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md z-30 border-b border-outline-variant/10 shrink-0 gap-2">
                 <div class="flex items-center gap-2 md:gap-4 flex-1 md:flex-none">
-                    <div class="relative group flex-1 md:w-auto">
-                        <span class="absolute inset-y-0 left-3 flex items-center text-outline"><span
-                                class="material-symbols-outlined text-lg">search</span></span>
-                        <input id="search-peserta"
-                            class="bg-surface-container-low border border-transparent rounded-full py-2 pl-10 pr-4 text-sm w-full md:w-72 focus:border-primary/20 focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
-                            placeholder="Cari nama atau ID peserta..." type="text" oninput="filterPeserta()" />
-                    </div>
+                    <button class="md:hidden p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 flex items-center justify-center transition-colors shrink-0" onclick="toggleSidebar()">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h1 class="font-headline font-extrabold text-lg tracking-tight text-teal-950">Manajemen Peserta</h1>
                 </div>
                 <div class="flex items-center gap-2 md:gap-6 shrink-0">
-                    <div class="hidden md:flex items-center gap-2">
-                        <button
-                            class="p-2 rounded-full hover:bg-teal-50 transition-colors text-teal-700/70 relative"><span
-                                class="material-symbols-outlined"
-                                data-icon="notifications">notifications</span></button>
-                    </div>
-                    <div class="hidden md:block h-6 w-[1px] bg-outline-variant/30"></div>
-                    <button id="btn-buka-modal-tambah-peserta" onclick="bukaModalTambahPeserta()"
-                        class="bg-primary text-white p-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl font-headline font-bold text-sm flex items-center gap-2 hover:bg-teal-900 active:scale-95 transition-all shadow-sm">
-                        <span class="material-symbols-outlined text-sm md:text-base font-bold"
-                            data-icon="add">add</span>
-                        <span class="hidden md:inline">Tambah</span>
+                    <button class="theme-toggle p-2 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors" title="Mode Gelap">
+                        <span class="material-symbols-outlined dark-icon">dark_mode</span>
+                        <span class="material-symbols-outlined light-icon hidden">light_mode</span>
+                    </button>
+                    <button id="btn-buka-modal-tambah-peserta" onclick="bukaModalTambahPeserta()" class="bg-primary text-white p-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl font-headline font-bold text-sm flex items-center gap-2 hover:bg-teal-900 active:scale-95 transition-all shadow-sm">
+                        <span class="material-symbols-outlined text-sm md:text-base font-bold" data-icon="add">add</span>
+                        <span class="hidden md:inline">Tambah Peserta</span>
                     </button>
                 </div>
             </header>
 
-            <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                <div class="max-w-6xl mx-auto pb-24 md:pb-8">
-                    <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                        <div>
-                            <h2
-                                class="text-[32px] font-extrabold text-teal-950 tracking-tight font-headline max-w-2xl leading-tight">
-                                Manajemen Peserta Ujian
-                            </h2>
+            <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative w-full">
+            <div class="max-w-7xl mx-auto pb-6 md:pb-8">
+                    <!-- Quick Stats -->
+                    <div class="flex flex-col md:grid md:grid-cols-4 gap-4 md:gap-6 mb-8">
+                        <!-- Kartu Total Peserta -->
+                        <div id="card-total-peserta" onclick="setFilterPesertaKategori('')" class="bg-primary p-5 md:p-6 rounded-2xl text-white shadow-lg shadow-primary/20 relative overflow-hidden cursor-pointer transition-all duration-200 active:scale-[0.98]">
+                            <div class="absolute -right-4 -bottom-4 opacity-10"><span class="material-symbols-outlined text-8xl">groups</span></div>
+                            <div class="flex justify-between items-start relative z-10">
+                                <p class="text-[10px] md:text-xs font-bold uppercase tracking-widest text-teal-200 mb-1 md:mb-2">Total Peserta</p>
+                                <span id="icon-check-total" class="material-symbols-outlined text-white bg-white/20 p-1 rounded-md text-[14px]">check_circle</span>
+                            </div>
+                            <h3 class="text-4xl md:text-5xl font-extrabold font-headline tracking-tight relative z-10" id="stat-total-peserta">0</h3>
                         </div>
-                    </div>
-
-                    <!-- Tampilan Quick Stats -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                        <div
-                            class="bg-primary p-6 rounded-2xl text-white shadow-lg shadow-primary/20 relative overflow-hidden">
-                            <div class="absolute -right-4 -bottom-4 opacity-10"><span
-                                    class="material-symbols-outlined text-8xl">groups</span></div>
-                            <p class="text-xs font-bold uppercase tracking-widest text-teal-200 mb-2">Total Peserta</p>
-                            <h3 class="text-5xl font-extrabold font-headline tracking-tight" id="stat-total-peserta">0
-                            </h3>
-                        </div>
-                        <div id="peserta-quick-stats" class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Kartu Kategori (Carousel on Mobile) -->
+                        <div id="peserta-quick-stats" class="md:col-span-3 flex overflow-x-auto hide-scrollbar gap-3 md:gap-6 pb-2 md:pb-0 snap-x snap-mandatory md:grid md:grid-cols-3">
                             <!-- Dynamic stats injected by JS -->
                         </div>
                     </div>
 
-                    <!-- Bagian Tabel Dinamis -->
-                    <div
-                        class="bg-white rounded-2xl shadow-sm border border-outline-variant/20 flex flex-col relative overflow-visible">
-
-                        <!-- Floating Bulk Action Bar (Hidden by default) -->
-                        <div id="bulk-action-bar"
-                            class="hidden absolute top-0 left-0 right-0 h-20 bg-teal-900 z-10 rounded-t-2xl px-8 flex items-center justify-between shadow-md transform transition-all translate-y-0">
-                            <div class="flex items-center gap-4 text-white">
-                                <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm"
-                                    id="bulk-count">0</div>
-                                <span class="font-bold text-sm">Peserta Terpilih</span>
+                    <!-- Filter and Search Bar -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-8 flex flex-col items-center gap-4">
+                        <div class="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="relative w-full sm:w-48 shrink-0">
+                                <select id="select-pilih-massal-peserta" onchange="window.handleSelectMassalPeserta(this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-4 pr-8 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer transition-colors hover:bg-gray-100">
+                                    <option value="" disabled selected>Pilih Massal...</option>
+                                    <option value="page">Pilih Halaman Ini</option>
+                                    <option value="all">Pilih Semua Data</option>
+                                    <option value="none">Kosongkan Pilihan</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-lg">expand_more</span>
                             </div>
-                            <div class="flex gap-3">
-                                <button
-                                    class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[16px]">swap_horiz</span> Ubah
-                                    Pembimbing
-                                </button>
-                                <button onclick="hapusPesertaTerpilih()"
-                                    class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[16px]">delete</span> Hapus Terpilih
-                                </button>
-                                <button onclick="batalPilihSemua()"
-                                    class="px-4 py-2 text-white/70 hover:text-white text-xs font-bold transition-colors ml-2">Batal</button>
+                            <div class="relative w-full">
+                                <span class="absolute inset-y-0 left-4 flex items-center text-gray-400 pointer-events-none">
+                                    <span class="material-symbols-outlined text-lg">search</span>
+                                </span>
+                                <input id="search-peserta" type="text" placeholder="Cari nama atau ID peserta..." class="w-full bg-gray-50 border-none rounded-xl py-3 pl-11 pr-4 text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-teal-950 font-medium placeholder-gray-400" oninput="filterPeserta()" />
                             </div>
                         </div>
-
-                        <div
-                            class="px-8 py-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white border-b border-outline-variant/10 rounded-t-2xl relative z-0">
-                            <div>
-                                <h4 class="text-lg font-extrabold text-teal-950 font-headline mb-1">Data Rinci Peserta
-                                </h4>
-                                <p class="text-xs text-gray-500 font-medium">Daftar siswa yang terdaftar untuk sesi
-                                    pra-munaqosyah</p>
+                        <div class="flex flex-col sm:flex-row flex-wrap gap-3 w-full">
+                            <div class="relative w-full sm:w-auto shrink-0">
+                                <select id="peserta-items-per-page" onchange="window.pesertaPagination.itemsPerPage = parseInt(this.value); window.pesertaPagination.currentPage = 1; filterPeserta();" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer" title="Tampilkan baris per halaman">
+                                    <option value="12">12 Baris</option>
+                                    <option value="24">24 Baris</option>
+                                    <option value="50">50 Baris</option>
+                                    <option value="100">100 Baris</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-lg">expand_more</span>
                             </div>
-                            <div class="flex gap-3">
-                                <select id="filter-tabel-kategori" onchange="renderTablePeserta()"
-                                    class="text-xs font-bold px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
-                                    <option value="">Filter Kategori</option>
+                            <div class="relative w-full sm:w-40 flex-1">
+                                <select id="filter-tabel-kategori" onchange="filterPeserta()" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
+                                    <option value="">Semua Kategori</option>
                                     <!-- Opsi diisi via JS -->
                                 </select>
-                                <button onclick="eksporDataPeserta()"
-                                    class="flex items-center gap-2 text-xs font-bold px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-teal-950 transition-colors shadow-sm">
-                                    <span class="material-symbols-outlined text-[18px]"
-                                        data-icon="download">download</span>
-                                    Ekspor
-                                </button>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                             </div>
-                        </div>
-
-                        <div class="w-full overflow-x-auto">
-                            <table class="w-full text-left border-collapse whitespace-nowrap min-w-max">
-                                <thead>
-                                    <tr class="bg-gray-50/50 border-b border-gray-100">
-                                        <th
-                                            class="px-4 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                            Nama Siswa</th>
-                                        <th
-                                            class="px-4 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                            Status</th>
-                                        <th
-                                            class="px-4 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                            Kategori</th>
-                                        <th
-                                            class="px-4 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                            Tanggal Ujian</th>
-                                        <th
-                                            class="px-4 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                            Pembimbing</th>
-                                        <th id="th-aksi-peserta"
-                                            class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center w-16">
-                                            Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tbody-peserta" class="divide-y divide-gray-100">
-                                    <!-- Di-render melalui JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div id="pagination-peserta" class="flex justify-center items-center p-6 space-x-2">
-                            <!-- Pagination controls injected by JS -->
+                            <div class="relative w-full sm:w-40 flex-1">
+                                <select id="filter-tabel-kelas" onchange="filterPeserta()" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
+                                    <option value="">Semua Kelas</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                            </div>
+                            <div class="relative w-full sm:w-40 flex-1">
+                                <select id="filter-tabel-pembimbing" onchange="filterPeserta()" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
+                                    <option value="">Semua Pembimbing</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                            </div>
+                            <div class="relative w-full sm:w-40 flex-1">
+                                <select id="filter-tabel-status" onchange="filterPeserta()" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
+                                    <option value="">Semua Status</option>
+                                    <option value="belum">Belum Ujian</option>
+                                    <option value="sedang">Sedang Ujian</option>
+                                    <option value="selesai">Selesai</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                            </div>
+                            <div class="relative w-full sm:w-48 flex-1">
+                                <select id="sort-tabel-peserta" onchange="filterPeserta()" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer">
+                                    <option value="nama_asc">Nama (A-Z)</option>
+                                    <option value="nama_desc">Nama (Z-A)</option>
+                                    <option value="tgl_asc">Tanggal Ujian (Awal-Akhir)</option>
+                                    <option value="tgl_desc">Tanggal Ujian (Akhir-Awal)</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">sort</span>
+                            </div>
+                            <button onclick="eksporDataPeserta()" class="p-3 bg-gray-50 text-gray-500 rounded-xl hover:bg-primary/5 hover:text-primary transition-colors" title="Ekspor Data ke CSV">
+                                <span class="material-symbols-outlined text-lg" data-icon="download">download</span>
+                            </button>
                         </div>
                     </div>
+
+                    <!-- Floating Bulk Action Bar (Hidden by default) -->
+                    <div id="bulk-action-bar"
+                        class="hidden absolute top-0 left-0 right-0 p-4 min-h-[5rem] bg-teal-900 z-[25] rounded-t-2xl flex-col md:flex-row items-center justify-between shadow-lg transform transition-all translate-y-0 gap-4">
+                        <div class="flex items-center gap-4 text-white">
+                            <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm"
+                                id="bulk-count">0</div>
+                            <span class="font-bold text-sm">Peserta Terpilih</span>
+                        </div>
+                        <div class="flex flex-wrap justify-center gap-2">
+                            <button onclick="cetakKartuUjianMassal()" class="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">badge</span> <span class="hidden sm:inline">Cetak Kartu</span>
+                            </button>
+                            <button onclick="bukaModalUbahJadwalMassal()" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">edit_calendar</span> <span class="hidden sm:inline">Ubah Jadwal</span>
+                            </button>
+                            <button onclick="bukaModalUbahPembimbingMassal()" class="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">swap_horiz</span> <span class="hidden sm:inline">Ubah Pembimbing</span>
+                            </button>
+                            <button onclick="hapusPesertaTerpilih()"
+                                class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm">
+                                <span class="material-symbols-outlined text-[16px]">delete</span> <span class="hidden sm:inline">Hapus Terpilih</span>
+                            </button>
+                            <button onclick="batalPilihSemua()"
+                                class="px-3 py-2 text-white/70 hover:text-white text-xs font-bold transition-colors ml-1">Batal</button>
+                        </div>
+                    </div>
+
+                    <!-- Peserta Cards Grid -->
+                    <div id="container-peserta-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                        <!-- Di-render melalui JavaScript -->
+                    </div>
+
+                    <!-- Pagination -->
+                    <div id="pagination-peserta" class="flex justify-center items-center pt-8 space-x-2">
+                        <!-- Pagination controls injected by JS -->
+                    </div>
+
+                    <!-- Floating Action Button for Mobile -->
+                <button onclick="bukaModalTambahPeserta()" class="md:hidden fixed right-5 w-14 h-14 bg-primary text-white rounded-2xl shadow-lg flex items-center justify-center active:scale-90 transition-transform z-40" style="bottom: calc(4.5rem + env(safe-area-inset-bottom));">
+                        <span class="material-symbols-outlined text-2xl">add</span>
+                    </button>
+
+                <!-- Footer Web -->
+                <div class="mt-8 pt-4 text-center hidden md:block border-t border-gray-100">
+                    <p class="text-[11px] text-gray-400 font-bold tracking-wide">© 2026 Juman Jayyidin</p>
+                </div>
                 </div>
             </main>
         </div>
 
         <!-- View: UJIAN (Pilih Siswa) -->
-        <div id="view-ujian" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] hidden">
-            <header
-                class="sticky top-0 z-30 flex justify-between items-center w-full px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-2">
-                <div class="flex items-center gap-2 md:gap-4 shrink-0 hidden md:flex">
-                    <h1 class="font-headline font-extrabold text-lg tracking-tight text-teal-950 truncate">Form
-                        Penilaian
-                    </h1>
+    <div id="view-ujian" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] pb-[72px] md:pb-0 hidden">
+            <header class="sticky top-0 z-30 flex justify-between items-center w-full px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0 gap-2">
+                <div class="flex items-center gap-2 md:gap-4 shrink-0">
+                    <button class="md:hidden p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 flex items-center justify-center transition-colors" onclick="toggleSidebar()">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h1 class="font-headline font-extrabold text-lg tracking-tight text-teal-950 truncate">Penilaian Ujian</h1>
                 </div>
-                <div class="flex items-center gap-2 w-full md:w-auto">
-                    <div class="relative group flex-1">
-                        <span class="absolute inset-y-0 left-3 flex items-center text-outline pointer-events-none"><span
-                                class="material-symbols-outlined text-lg" data-icon="search">search</span></span>
-                        <input id="search-ujian"
-                            class="bg-surface-container-low border border-transparent rounded-full py-2 pl-10 pr-4 text-sm w-full md:w-72 focus:border-primary/20 focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
-                            placeholder="Cari nama peserta..." type="text" oninput="filterUjianPeserta()" />
+                <div class="flex items-center gap-3">
+                    <button class="theme-toggle p-2 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors" title="Mode Gelap">
+                        <span class="material-symbols-outlined dark-icon">dark_mode</span>
+                        <span class="material-symbols-outlined light-icon hidden">light_mode</span>
+                    </button>
+                    <div class="hidden md:flex items-center gap-2 text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100" id="display-tanggal-ujian">
+                        <!-- Diisi oleh JS -->
                     </div>
                 </div>
             </header>
 
-            <main class="flex-1 overflow-y-auto p-4 md:p-8">
-                <div class="max-w-5xl mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8">
-                    <div class="space-y-1">
-                        <h2 class="text-2xl font-headline font-extrabold text-teal-950 tracking-tight">Daftar Peserta
-                            Ujian
-                        </h2>
-                        <p class="text-gray-500 font-medium text-sm">Pilih kategori ujian untuk melihat daftar peserta
-                            yang
-                            dijadwalkan.</p>
-                    </div>
-
-                    <section class="bg-white rounded-2xl p-6 border border-outline-variant/20 shadow-sm">
-                        <div class="flex flex-col md:flex-row md:items-end gap-6">
-                            <div class="flex-1 space-y-2">
-                                <div class="flex justify-between items-center">
-                                    <label
-                                        class="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">Kategori
-                                        Ujian</label>
-                                </div>
-                                <div class="relative group">
-                                    <select id="kategori-select" onchange="filterUjianPeserta()"
-                                        class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 focus:ring-2 focus:ring-primary/20 appearance-none text-teal-950 font-bold outline-none">
-                                        <!-- Opsi kategori diisi dari JS -->
-                                    </select>
-                                    <span
-                                        class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                                        data-icon="expand_more">expand_more</span>
-                                </div>
+            <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 w-full">
+                <div class="max-w-6xl mx-auto space-y-6 md:space-y-8 pb-6 md:pb-8">
+                    
+                    <!-- Filter Bar Dinamis -->
+                    <div class="bg-white rounded-3xl p-5 md:p-6 border border-gray-100 shadow-sm flex flex-col lg:flex-row gap-5 lg:items-center justify-between relative z-10 overflow-hidden">
+                        <div class="absolute right-0 top-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 pointer-events-none"></div>
+                        <div class="w-full lg:w-auto">
+                            <h2 class="text-2xl font-headline font-extrabold text-teal-950 tracking-tight mb-1">Daftar Peserta Ujian</h2>
+                            <p class="text-sm font-medium text-gray-500">Pilih santri untuk mulai memberikan nilai.</p>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0">
+                            <button id="btn-nilai-massal" onclick="window.bukaModalNilaiMassal()" class="hidden bg-indigo-600 text-white px-4 py-3 sm:py-2 rounded-xl font-bold text-sm shadow-sm hover:bg-indigo-700 transition-colors items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-[18px]">checklist_rtl</span> Input Massal
+                            </button>
+                            <div class="relative w-full sm:w-32 shrink-0">
+                                <select id="ujian-items-per-page" onchange="window.ujianPagination.itemsPerPage = parseInt(this.value); window.ujianPagination.currentPage = 1; window.filterUjianPeserta();" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 appearance-none text-teal-950 font-bold outline-none cursor-pointer shadow-inner transition-colors" title="Tampilkan baris per halaman">
+                                    <option value="12">12 Baris</option>
+                                    <option value="24">24 Baris</option>
+                                    <option value="50">50 Baris</option>
+                                    <option value="100">100 Baris</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-lg">expand_more</span>
                             </div>
-                            <div class="flex-1 space-y-2">
-                                <label
-                                    class="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">Tanggal
-                                    Ujian</label>
-                                <div id="display-tanggal-ujian"
-                                    class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-teal-950 font-bold outline-none min-h-[48px] flex items-center flex-wrap gap-x-2 gap-y-1">
-                                    <!-- Diisi oleh JS -->
-                                </div>
+                            <div class="relative group w-full sm:w-56">
+                                <select id="kategori-select" onchange="window.ujianPagination.currentPage = 1; filterUjianPeserta()" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-primary/20 appearance-none text-teal-950 font-bold outline-none cursor-pointer shadow-inner transition-colors">
+                                    <!-- Opsi diisi dari JS -->
+                                </select>
+                                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-lg" data-icon="expand_more">expand_more</span>
+                            </div>
+                            
+                            <div class="relative w-full sm:w-72">
+                                <span class="absolute inset-y-0 left-4 flex items-center text-gray-400 pointer-events-none">
+                                    <span class="material-symbols-outlined text-lg" data-icon="search">search</span>
+                                </span>
+                        <input id="search-ujian" type="text" placeholder="Cari nama peserta ujian..." class="w-full bg-white border-none rounded-2xl py-3.5 pl-12 pr-5 text-sm focus:ring-4 focus:ring-primary/10 transition-all outline-none shadow-sm text-teal-950 font-medium placeholder-gray-400" />
                             </div>
                         </div>
-                    </section>
+                    </div>
 
-                    <section id="container-peserta-ujian" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <section id="container-peserta-ujian" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                         <!-- Cards peserta di-render oleh JS -->
                     </section>
 
-                    <section id="pagination-ujian" class="flex justify-center items-center pt-4 space-x-2">
+                    <section id="pagination-ujian" class="flex justify-center items-center pt-2 space-x-2">
                         <!-- Tombol paginasi di-render oleh JS -->
                     </section>
+
+                    <!-- Footer Web -->
+                    <div class="mt-8 pt-4 text-center hidden md:block border-t border-gray-100">
+                        <p class="text-[11px] text-gray-400 font-bold tracking-wide">© 2026 Juman Jayyidin</p>
+                    </div>
                 </div>
             </main>
         </div>
 
         <!-- View: DETAIL PENILAIAN (Daftar Surah per Siswa) -->
-        <div id="view-penilaian-detail" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] hidden">
+    <div id="view-penilaian-detail" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] pb-[72px] md:pb-0 hidden">
             <header
                 class="sticky top-0 z-30 flex justify-between items-center w-full px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md border-b border-outline-variant/10 shrink-0">
                 <div class="flex items-center space-x-2 md:space-x-4"> <button onclick="switchView('ujian')"
-                        class="p-2 -ml-2 md:ml-0 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+                    class="p-2 -ml-2 md:ml-0 rounded-full hover:bg-gray-100 active:scale-90 active:bg-gray-200 flex items-center justify-center transition-all duration-200">
                         <span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
                     </button>
                     <h1 class="font-headline font-extrabold text-lg tracking-tight text-teal-950 truncate">Penilaian
                         Siswa
                     </h1>
                 </div>
+                <button class="theme-toggle p-2 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors" title="Mode Gelap">
+                    <span class="material-symbols-outlined dark-icon">dark_mode</span>
+                    <span class="material-symbols-outlined light-icon hidden">light_mode</span>
+                </button>
             </header>
 
-            <main class="flex-1 overflow-y-auto p-4 md:p-8">
-                <div class="max-w-4xl mx-auto space-y-6 md:space-y-8 pb-24 md:pb-8">
+            <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 md:pb-4 w-full">
+            <div class="max-w-4xl mx-auto space-y-6 md:space-y-8 pb-6 md:pb-8">
                     <section id="detail-student-header" class="grid grid-cols-1 md:grid-cols-3 gap-6"></section>
 
                     <section class="space-y-4">
@@ -666,9 +860,6 @@
                                 <h3 id="detail-surah-title"
                                     class="text-xl font-headline font-extrabold text-teal-950 shrink-0">Daftar Ujian
                                 </h3>
-                                <div id="container-segmen-tabs"
-                                    class="flex items-center bg-gray-100 p-1 rounded-lg overflow-x-auto hide-scrollbar max-w-full">
-                                </div>
                             </div>
                             <span class="text-xs font-bold text-gray-500 whitespace-nowrap shrink-0"
                                 id="detail-surah-count">0 Item</span>
@@ -679,7 +870,6 @@
                                 <span class="material-symbols-outlined text-lg" data-icon="search">search</span>
                             </span>
                             <input id="search-surat" type="text" placeholder="Cari surat atau materi..."
-                                oninput="renderDaftarSuratDetail()"
                                 class="w-full bg-white border border-gray-200 rounded-xl py-3 pl-12 pr-4 text-sm focus:border-primary/20 focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all outline-none shadow-sm">
                         </div>
 
@@ -687,22 +877,30 @@
                             <!-- Kartu surah di-render dari JS -->
                         </div>
                     </section>
+
+                    <!-- Footer Web -->
+                    <div class="mt-8 pt-4 text-center hidden md:block border-t border-gray-100">
+                        <p class="text-[11px] text-gray-400 font-bold tracking-wide">© 2026 Juman Jayyidin</p>
+                    </div>
                 </div>
             </main>
         </div>
 
         <!-- View: LAPORAN -->
-        <div id="view-laporan" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] hidden">
+    <div id="view-laporan" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] pb-[72px] md:pb-0 hidden">
             <header
                 class="w-full flex justify-between items-center px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md z-30 border-b border-outline-variant/10 shrink-0">
                 <div class="flex items-center gap-2 md:gap-4">
+                    <button class="md:hidden p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 flex items-center justify-center transition-colors" onclick="toggleSidebar()">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
                     <h1 class="font-headline font-extrabold text-lg tracking-tight text-teal-950">Manajemen Laporan</h1>
                 </div>
                 <div class="flex items-center gap-6">
-                    <button class="p-2 rounded-full hover:bg-teal-50 transition-colors text-teal-700/70 relative">
-                        <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                    <button class="theme-toggle p-2 -mr-2 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors" title="Mode Gelap">
+                        <span class="material-symbols-outlined dark-icon">dark_mode</span>
+                        <span class="material-symbols-outlined light-icon hidden">light_mode</span>
                     </button>
-                    <div class="h-6 w-[1px] bg-outline-variant/30"></div>
                     <div class="relative group">
                         <div class="flex items-center gap-3 cursor-pointer">
                             <div
@@ -723,8 +921,8 @@
                 </div>
             </header>
 
-            <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                <div class="max-w-6xl mx-auto pb-8">
+            <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative w-full">
+            <div class="max-w-7xl mx-auto pb-12 md:pb-8">
 
                     <!-- Header Title -->
                     <div class="mb-8">
@@ -800,141 +998,190 @@
                         </div>
                     </div>
 
-                    <!-- FITUR 4 & 5: Filter & Tombol Aksi -->
-                    <div class="flex flex-col md:flex-row justify-between gap-4 mb-4">
-                        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                            <div class="relative flex-1">
-                                <span
-                                    class="absolute inset-y-0 left-3 flex items-center text-outline pointer-events-none"><span
-                                        class="material-symbols-outlined text-lg">search</span></span>
-                                <input id="laporan-search" oninput="renderLaporanPage()"
-                                    class="w-full bg-white border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
-                                    placeholder="Cari siswa...">
+                    <!-- FITUR 4 & 5: Filter & Tombol Aksi (Tampilan Baru) -->
+                    <div class="bg-white rounded-3xl p-5 md:p-6 border border-gray-100 shadow-sm mb-6 flex flex-col gap-4 relative z-20">
+                        
+                        <!-- Top Row: Checkbox, Search & Primary Actions -->
+                        <div class="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div class="flex items-center gap-3 w-full lg:w-auto">
+                                <div class="relative shrink-0 w-full sm:w-48">
+                                    <select id="select-pilih-massal-laporan" onchange="window.handleSelectMassalLaporan(this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pl-4 pr-8 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm cursor-pointer transition-colors hover:bg-gray-100">
+                                        <option value="" disabled selected>Pilih Massal...</option>
+                                        <option value="page">Pilih Halaman Ini</option>
+                                        <option value="all">Pilih Semua Data</option>
+                                        <option value="none">Kosongkan Pilihan</option>
+                                    </select>
+                                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-lg">expand_more</span>
+                                </div>
+                                <div class="relative flex-1 lg:w-72">
+                                    <span class="absolute inset-y-0 left-4 flex items-center text-gray-400 pointer-events-none"><span class="material-symbols-outlined text-lg">search</span></span>
+                                    <input id="laporan-search" oninput="renderLaporanPage()" class="w-full bg-gray-50 border-none rounded-xl py-3 pl-11 pr-4 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner placeholder-gray-400" placeholder="Cari nama atau ID...">
+                                </div>
                             </div>
-                            <div class="relative flex-1 md:w-48">
-                                <select id="laporan-filter-kategori" onchange="renderLaporanPage()"
-                                    class="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm">
+                            
+                            <div class="flex flex-wrap gap-2 w-full lg:w-auto shrink-0">
+                                <button onclick="window.bagikanHasilFilter()" class="flex-1 sm:flex-none px-4 py-3 bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold rounded-xl shadow-sm hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2 text-sm active:scale-95" title="Bagikan link hasil ujian untuk daftar yang difilter saat ini">
+                                    <span class="material-symbols-outlined text-[18px]" data-icon="share">share</span>
+                                    <span class="hidden sm:inline">Bagikan Link</span><span class="sm:hidden">Share Filter</span>
+                                </button>
+                                <button onclick="eksporDataLaporan()" class="flex-1 sm:flex-none px-4 py-3 bg-white border border-gray-200 text-teal-950 font-bold rounded-xl shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm active:scale-95" title="Unduh data laporan yang difilter">
+                                    <span class="material-symbols-outlined text-[18px] text-green-600" data-icon="description">description</span>
+                                    <span class="hidden sm:inline">Ekspor Excel</span><span class="sm:hidden">Excel</span>
+                                </button>
+                                <button onclick="cetakRekapLaporan()" class="flex-1 sm:flex-none px-4 py-3 bg-primary text-white font-bold rounded-xl shadow-sm hover:bg-teal-900 transition-colors flex items-center justify-center gap-2 text-sm active:scale-95" title="Cetak halaman laporan">
+                                    <span class="material-symbols-outlined text-[18px]" data-icon="print">print</span>
+                                    <span class="hidden sm:inline">Cetak Rekap</span><span class="sm:hidden">Cetak</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Row: Select Filters (Scrollable flex on mobile to save space) -->
+                        <div class="flex overflow-x-auto hide-scrollbar gap-3 w-full pb-2 md:pb-0 md:flex-wrap">
+                            <div class="relative w-32 shrink-0">
+                                <select id="laporan-items-per-page" onchange="if(typeof window.laporanPagination !== 'undefined') { window.laporanPagination.itemsPerPage = parseInt(this.value); window.laporanPagination.currentPage = 1; renderLaporanPage(); }" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors shadow-sm">
+                                    <option value="12">12 Baris</option>
+                                    <option value="24">24 Baris</option>
+                                    <option value="50">50 Baris</option>
+                                    <option value="100">100 Baris</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">expand_more</span>
+                            </div>
+                            <div class="relative w-40 sm:w-40 shrink-0 sm:flex-1">
+                                <select id="laporan-filter-kategori" onchange="renderLaporanPage()" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors shadow-sm">
                                     <option value="">Semua Kategori</option>
                                 </select>
-                                <span
-                                    class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"
-                                    data-icon="expand_more">expand_more</span>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                             </div>
-                            <div class="relative flex-1 md:w-48">
-                                <select id="laporan-filter-kelas" onchange="renderLaporanPage()"
-                                    class="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm">
+                            <div class="relative w-40 sm:w-40 shrink-0 sm:flex-1">
+                                <select id="laporan-filter-kelas" onchange="renderLaporanPage()" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors shadow-sm">
                                     <option value="">Semua Kelas</option>
                                 </select>
-                                <span
-                                    class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"
-                                    data-icon="expand_more">expand_more</span>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                             </div>
-                            <div class="relative flex-1 md:w-48">
-                                <select id="laporan-filter-status" onchange="renderLaporanPage()"
-                                    class="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none shadow-sm">
+                            <div class="relative w-40 sm:w-40 shrink-0 sm:flex-1">
+                                <select id="laporan-filter-pembimbing" onchange="renderLaporanPage()" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors shadow-sm">
+                                    <option value="">Semua Pembimbing</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                            </div>
+                            <div class="relative w-40 sm:w-40 shrink-0 sm:flex-1">
+                                <select id="laporan-filter-status" onchange="renderLaporanPage()" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors shadow-sm">
                                     <option value="">Semua Status</option>
                                     <option value="lulus">Lulus</option>
                                     <option value="tidak-lulus">Tidak Lulus</option>
+                                    <option value="belum-ujian">Belum Ujian</option>
+                                    <option value="susulan">Ujian Susulan</option>
                                 </select>
-                                <span
-                                    class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"
-                                    data-icon="expand_more">expand_more</span>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                             </div>
-                        </div>
-                        <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                            <button
-                                class="flex-1 md:flex-none px-4 md:px-5 py-2.5 bg-white border border-gray-200 text-teal-950 font-bold rounded-xl shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm">
-                                <span class="material-symbols-outlined text-[18px] text-green-600"
-                                    data-icon="description">description</span>
-                                <span class="hidden sm:inline">Ekspor Excel</span><span class="sm:hidden">Excel</span>
-                            </button>
-                            <button
-                                class="flex-1 md:flex-none px-4 md:px-5 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm shadow-primary/20 hover:bg-teal-900 transition-colors flex items-center justify-center gap-2 text-sm">
-                                <span class="material-symbols-outlined text-[18px]" data-icon="print">print</span>
-                                <span class="hidden sm:inline">Cetak Rekap</span><span class="sm:hidden">Cetak</span>
-                            </button>
+                            <div class="relative w-40 sm:w-40 shrink-0 sm:flex-1 hidden lg:block">
+                                <select id="laporan-filter-penguji" onchange="renderLaporanPage()" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors shadow-sm">
+                                    <option value="">Semua Penguji</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                            </div>
+                            <div class="relative w-40 sm:w-40 shrink-0 sm:flex-1">
+                                <select id="laporan-sort" onchange="renderLaporanPage()" class="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-bold text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer transition-colors shadow-sm">
+                                    <option value="score_desc">Nilai Tertinggi</option>
+                                    <option value="score_asc">Nilai Terendah</option>
+                                    <option value="name_asc">Nama (A-Z)</option>
+                                    <option value="name_desc">Nama (Z-A)</option>
+                                </select>
+                                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">sort</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- FITUR 2 & 3: Tabel Rekap Akhir & Status Berwarna -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-outline-variant/20 overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse whitespace-nowrap">
-                                <thead>
-                                    <tr class="bg-gray-50/80 border-b border-gray-100">
-                                        <th
-                                            class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 w-12 text-center">
-                                            No</th>
-                                        <th
-                                            class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                            Data Siswa</th>
-                                        <th
-                                            class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                            Kategori Ujian</th>
-                                        <th
-                                            class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">
-                                            Nilai Rata-rata</th>
-                                        <th
-                                            class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                                            Predikat</th>
-                                        <th
-                                            class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center">
-                                            Status</th>
-                                        <th
-                                            class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 text-right">
-                                            Syahadah</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="laporan-table-body" class="divide-y divide-gray-100">
-                                    <!-- Data Laporan Dinamis akan dirender di sini -->
-                                </tbody>
-                            </table>
+                    <!-- Distribusi Predikat (FITUR 4) -->
+                    <div id="laporan-distribution-chart" class="mb-6 bg-white p-5 md:p-6 rounded-3xl border border-gray-100 shadow-sm hidden flex-col gap-3">
+                        <h3 class="text-sm font-extrabold text-teal-950 mb-1 flex items-center gap-2"><span class="material-symbols-outlined text-primary">pie_chart</span> Distribusi Predikat Kelulusan</h3>
+                        <div id="laporan-dist-bar" class="flex w-full h-5 rounded-full overflow-hidden shadow-inner bg-gray-100">
                         </div>
+                        <div id="laporan-dist-legend" class="flex flex-wrap gap-4 mt-2 text-[11px] font-bold uppercase tracking-widest text-gray-500 justify-center sm:justify-start">
+                        </div>
+                    </div>
+
+                    <!-- Floating Bulk Action Bar (FITUR 3) -->
+                    <div id="laporan-bulk-action-bar" class="hidden mb-6 p-4 md:p-5 bg-teal-900 z-[25] rounded-2xl flex-col sm:flex-row items-center justify-between shadow-xl transition-all gap-4 sticky top-4 border border-teal-800">
+                        <div class="flex items-center gap-4 text-white">
+                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg shadow-inner" id="laporan-bulk-count">0</div>
+                            <div>
+                                <span class="font-bold text-base block">Peserta Terpilih</span>
+                                <span class="text-[10px] text-teal-200 block sm:hidden md:block">Siap untuk tindakan massal</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap justify-center gap-3">
+                            <button onclick="window.bagikanHasilMassal()" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2 shadow-sm active:scale-95">
+                                <span class="material-symbols-outlined text-[16px]">share</span> <span class="hidden sm:inline">Bagikan Link</span><span class="sm:hidden">Share</span>
+                            </button>
+                            <button onclick="cetakSyahadahMassal()" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2 shadow-sm active:scale-95">
+                                <span class="material-symbols-outlined text-[16px]">workspace_premium</span> <span class="hidden sm:inline">Cetak Syahadah</span><span class="sm:hidden">Cetak</span>
+                            </button>
+                            <button onclick="batalPilihSemuaLaporan()" class="px-4 py-2.5 text-white/70 hover:text-white text-xs font-bold transition-colors ml-1 active:scale-95">Batal</button>
+                        </div>
+                    </div>
+
+                    <!-- FITUR 2 & 3: Kartu Laporan & Status Berwarna -->
+                    <div id="container-laporan-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+                        <!-- Kartu Laporan di-render di sini -->
                     </div>
 
                     <!-- Pagination Controls -->
-                    <div id="pagination-laporan" class="flex justify-center items-center pt-6 space-x-2">
+                    <div id="pagination-laporan" class="flex justify-center items-center pt-8 space-x-2">
                         <!-- Kontrol Paginasi akan dirender di sini -->
                     </div>
 
+                    <!-- Footer Web -->
+                    <div class="mt-8 pt-4 text-center hidden md:block border-t border-gray-100">
+                        <p class="text-[11px] text-gray-400 font-bold tracking-wide">© 2026 Juman Jayyidin</p>
+                    </div>
                 </div>
             </main>
         </div>
 
         <!-- View: PENGATURAN (BARU) -->
-        <div id="view-pengaturan" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] hidden">
+    <div id="view-pengaturan" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] pb-[72px] md:pb-0 hidden">
             <header
                 class="w-full flex justify-between items-center px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md z-30 border-b border-outline-variant/10 shrink-0">
                 <div class="flex items-center gap-2 md:gap-4">
+                    <button class="md:hidden p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 flex items-center justify-center transition-colors" onclick="toggleSidebar()">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
                     <h1 class="font-headline font-extrabold text-lg tracking-tight text-teal-950">Pengaturan Aplikasi
                     </h1>
                 </div>
-                <div class="relative group">
-                    <div class="flex items-center gap-3 cursor-pointer">
-                        <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-md">
-                            <img id="user-avatar-pengaturan" alt="Profil" class="w-full h-full object-cover" src="" />
+                <div class="flex items-center gap-6">
+                    <button class="theme-toggle p-2 -mr-2 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors" title="Mode Gelap">
+                        <span class="material-symbols-outlined dark-icon">dark_mode</span>
+                        <span class="material-symbols-outlined light-icon hidden">light_mode</span>
+                    </button>
+                    <div class="relative group">
+                        <div class="flex items-center gap-3 cursor-pointer">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-md">
+                                <img id="user-avatar-pengaturan" alt="Profil" class="w-full h-full object-cover" src="" />
+                            </div>
                         </div>
-                    </div>
-                    <!-- Dropdown Menu -->
-                    <div
-                        class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden group-hover:block">
-                        <button id="btn-change-profile-pic-pengaturan"
-                            class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-lg font-medium flex items-center gap-2">
-                            <span class="material-symbols-outlined text-base">image</span>
-                            Ubah Foto Profil
-                        </button>
-                        <div class="h-px bg-gray-100 my-1"></div>
-                        <button onclick="handleLogout()"
-                            class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-bold flex items-center gap-2">
-                            <span class="material-symbols-outlined text-base">logout</span>
-                            Keluar Akun
-                        </button>
+                        <!-- Dropdown Menu -->
+                        <div
+                            class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden group-hover:block">
+                            <button id="btn-change-profile-pic-pengaturan"
+                                class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">image</span>
+                                Ubah Foto Profil
+                            </button>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <button onclick="handleLogout()"
+                                class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">logout</span>
+                                Keluar Akun
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
-                <div class="max-w-6xl mx-auto pb-24 md:pb-8">
+            <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative w-full">
+            <div class="max-w-6xl mx-auto pb-6 md:pb-8">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                         <!-- Menu Pengaturan -->
                         <aside class="md:col-span-1">
@@ -946,11 +1193,6 @@
                                     class="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-primary/10 text-primary font-bold text-sm">
                                     <span class="material-symbols-outlined text-lg">tune</span>
                                     <span>Umum</span>
-                                </a>
-                                <a href="#" id="settings-nav-tampilan"
-                                    class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-500 hover:bg-gray-100 font-semibold text-sm">
-                                    <span class="material-symbols-outlined text-lg">palette</span>
-                                    <span>Tampilan</span>
                                 </a>
                                 <a href="#" id="settings-nav-data"
                                     class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-500 hover:bg-gray-100 font-semibold text-sm">
@@ -1032,27 +1274,6 @@
                                 </div>
                             </section>
 
-                            <!-- Pengaturan Tampilan -->
-                            <section id="settings-content-tampilan"
-                                class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hidden">
-                                <div class="border-b border-gray-100 pb-4 mb-6">
-                                    <h3 class="text-lg font-headline font-bold text-teal-950">Tampilan</h3>
-                                    <p class="text-sm text-gray-500">Sesuaikan tampilan antarmuka aplikasi.</p>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                                    <label class="text-sm font-bold text-gray-700">Mode Aplikasi</label>
-                                    <div class="sm:col-span-2">
-                                        <div class="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
-                                            <button id="btn-theme-light"
-                                                class="flex-1 py-2 text-sm font-bold bg-white text-primary rounded-md shadow-sm">Terang</button>
-                                            <button id="btn-theme-dark"
-                                                class="flex-1 py-2 text-sm font-bold text-gray-500">Gelap</button>
-                                        </div>
-                                        <p class="text-xs text-gray-400 mt-2">Mode Gelap akan segera hadir!</p>
-                                    </div>
-                                </div>
-                            </section>
-
                             <!-- Pengaturan Data Master -->
                             <section id="settings-content-data"
                                 class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hidden">
@@ -1127,6 +1348,17 @@
                                     <div
                                         class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between">
                                         <div>
+                                            <h4 class="font-bold text-teal-950">Semester</h4>
+                                            <p class="text-xs text-gray-500 mt-1">Kelola daftar semester atau tahun ajaran.</p>
+                                        </div>
+                                        <button onclick="bukaModalSemester()"
+                                            class="px-4 py-2 bg-white text-primary text-xs font-bold rounded-lg border border-gray-200 shadow-sm hover:bg-primary/5">
+                                            Kelola
+                                        </button>
+                                    </div>
+                                    <div
+                                        class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex items-center justify-between">
+                                        <div>
                                             <h4 class="font-bold text-teal-950">Nilai KKM</h4>
                                             <p class="text-xs text-gray-500 mt-1">Atur nilai minimum kelulusan (0-100).
                                             </p>
@@ -1157,7 +1389,7 @@
                                                 ini
                                                 ke dalam sebuah file JSON.</p>
                                         </div>
-                                        <button id="btn-backup-data"
+                                        <button id="btn-backup-data" onclick="downloadBackup()"
                                             class="mt-2 sm:mt-0 px-4 py-2 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600 transition-colors shrink-0">
                                             Unduh Cadangan
                                         </button>
@@ -1170,9 +1402,20 @@
                                                 penilaian.
                                                 Berguna untuk memulai tahun ajaran baru.</p>
                                         </div>
-                                        <button id="btn-reset-data"
+                                        <button id="btn-reset-data" onclick="resetApplicationData()"
                                             class="mt-2 sm:mt-0 px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors shrink-0">
                                             Reset Data Aplikasi
+                                        </button>
+                                    </div>
+                                    <div
+                                        class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-red-50/50 rounded-lg border border-red-100">
+                                        <div>
+                                            <h4 class="font-bold text-red-800">Ubah Database Server</h4>
+                                            <p class="text-xs text-red-600">Ganti config Firebase untuk mengarahkan aplikasi ke database sekolah lain.</p>
+                                        </div>
+                                        <button onclick="promptUbahFirebase()"
+                                            class="mt-2 sm:mt-0 px-4 py-2 bg-red-800 text-white text-xs font-bold rounded-lg hover:bg-red-900 transition-colors shrink-0">
+                                            Ubah Database
                                         </button>
                                     </div>
                                 </div>
@@ -1180,11 +1423,19 @@
 
                         </div>
                     </div>
+
+                    <!-- Footer Web -->
+                    <div class="mt-8 pt-4 text-center hidden md:block border-t border-gray-100">
+                        <p class="text-[11px] text-gray-400 font-bold tracking-wide">© 2026 Juman Jayyidin</p>
+                    </div>
                 </div>
             </main>
         </div>
 
         <input type="file" id="input-profile-pic" class="hidden" accept="image/png, image/jpeg">
+
+    <!-- Tempat memuat semua Modals (otomatis diisi JS) -->
+    <div id="modals-container">
 
         <!-- SLIDE-OVER: Profil Siswa (FITUR 5) -->
         <div id="slideover-backdrop"
@@ -1216,8 +1467,8 @@
             <div class="absolute inset-0 bg-teal-950/60 backdrop-blur-sm transition-opacity"
                 onclick="tutupModalTambahPeserta()"></div>
             <div
-                class="bg-white rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+            class="bg-white rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+            <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Tambah Peserta</h3>
                         <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Input Data Santri
@@ -1225,12 +1476,12 @@
                         </p>
                     </div>
                     <button onclick="tutupModalTambahPeserta()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                    class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
                     </button>
                 </div>
 
-                <div class="p-0 border-b border-gray-100 flex">
+            <div class="p-0 border-b border-gray-100 flex shrink-0">
                     <button id="tab-input-manual" onclick="switchTabTambah('manual')"
                         class="flex-1 py-3 text-sm font-bold text-primary border-b-2 border-primary bg-primary/5 transition-colors">Input
                         Manual</button>
@@ -1239,7 +1490,7 @@
                         dari Excel</button>
                 </div>
 
-                <div class="p-6 space-y-4" id="form-tambah-manual">
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto flex-1" id="form-tambah-manual">
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold text-teal-950">Nama Lengkap</label>
                         <input type="text" id="tambah-nama"
@@ -1247,6 +1498,13 @@
                             placeholder="Misal: Ahmad Zaki">
                     </div>
                     <!-- ID/NISN is now auto-generated -->
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-teal-950">Semester</label>
+                        <select id="tambah-semester"
+                            class="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none">
+                            <!-- Opsi semester dari JS -->
+                        </select>
+                    </div>
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold text-teal-950">Kelas</label>
                         <select id="tambah-kelas"
@@ -1275,15 +1533,29 @@
                                 <!-- Opsi tanggal dari JS -->
                             </select>
                         </div>
+                                <div class="col-span-1 sm:col-span-2 flex items-center gap-2 mt-2">
+                                    <input type="checkbox" id="tambah-susulan" class="rounded border-gray-300 text-primary focus:ring-primary/50 w-4 h-4">
+                                    <label for="tambah-susulan" class="text-xs font-bold text-teal-950 cursor-pointer">Tandai sebagai Siswa Ujian Susulan</label>
+                                </div>
                     </div>
                 </div>
 
-                <div class="p-6 space-y-4 hidden" id="form-import-excel">
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto flex-1 hidden" id="form-import-excel">
                     <div id="import-step-1" class="space-y-4">
-                        <p class="text-sm text-gray-600">Salin data dari Excel (3 kolom: <code
-                                class="font-bold text-teal-950">NAMA</code>, <code
-                                class="font-bold text-teal-950">KELAS</code>, <code
-                                class="font-bold text-teal-950">KATEGORI</code>) dan tempel di bawah ini.</p>
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-sm text-gray-600 pr-2">Salin data dari Excel (3 kolom: <code
+                                    class="font-bold text-teal-950">NAMA</code>, <code
+                                    class="font-bold text-teal-950">KELAS</code>, <code
+                                    class="font-bold text-teal-950">KATEGORI</code>) dan tempel di bawah ini.</p>
+                            <button onclick="unduhTemplateExcel()" class="text-xs font-bold text-primary hover:bg-primary/20 flex items-center gap-1 shrink-0 bg-primary/10 px-3 py-1.5 rounded-lg transition-colors" type="button" title="Unduh Template"><span class="material-symbols-outlined text-[14px]">download</span> <span class="hidden sm:inline">Template</span></button>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-teal-950">Tetapkan Semester untuk Semua</label>
+                            <select id="import-semester"
+                                class="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none">
+                                <!-- Opsi semester dari JS -->
+                            </select>
+                        </div>
                         <textarea id="import-textarea" rows="8"
                             class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-mono resize-y focus:ring-2 focus:ring-primary/20 focus:border-primary/40 outline-none transition-all shadow-inner"
                             placeholder="Ahmad Zaki	6 Abu Bakar	Juz 30"></textarea>
@@ -1326,21 +1598,21 @@
                     </div>
                 </div>
 
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3"
+            <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3 flex-wrap shrink-0"
                     id="footer-tambah-peserta">
                     <button id="btn-batal-modal" onclick="tutupModalTambahPeserta()"
-                        class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors shadow-sm">Batal</button>
+                    class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors shadow-sm active:scale-95 flex-1 sm:flex-none">Batal</button>
                     <button id="btn-batal-pratinjau" onclick="resetPratinjauImpor()"
-                        class="hidden px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors shadow-sm">Ubah
+                    class="hidden px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors shadow-sm active:scale-95 flex-1 sm:flex-none">Ubah
                         Data</button>
                     <button id="btn-simpan-manual" onclick="simpanPesertaBaru()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors">Simpan
+                    class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors active:scale-95 flex-1 sm:flex-none">Simpan
                         Peserta</button>
                     <button id="btn-pratinjau-impor" onclick="pratinjauImpor()"
-                        class="hidden px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-sm text-sm hover:bg-indigo-700 transition-colors">Pratinjau
+                    class="hidden px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl shadow-sm text-sm hover:bg-indigo-700 transition-colors active:scale-95 flex-1 sm:flex-none">Pratinjau
                         Data</button>
                     <button id="btn-simpan-impor-final" onclick="prosesImporFinal()"
-                        class="hidden px-6 py-2.5 bg-green-600 text-white font-bold rounded-xl shadow-sm text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Impor
+                    class="hidden px-6 py-2.5 bg-green-600 text-white font-bold rounded-xl shadow-sm text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex-1 sm:flex-none">Impor
                         Data</button>
                 </div>
             </div>
@@ -1351,21 +1623,27 @@
             <div class="absolute inset-0 bg-teal-950/60 backdrop-blur-sm transition-opacity"
                 onclick="tutupModalEditPeserta()"></div>
             <div
-                class="bg-white rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+            class="bg-white rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+            <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Edit Peserta</h3>
                         <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Perbarui Data Santri
                         </p>
                     </div>
                     <button onclick="tutupModalEditPeserta()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                    class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
                     <input type="hidden" id="edit-id-peserta">
                     <input type="hidden" id="edit-kategori-hidden">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-teal-950">Semester</label>
+                        <input type="text" id="edit-semester-display"
+                            class="w-full h-10 bg-gray-100 border border-gray-200 rounded-lg px-3 text-sm text-gray-500 outline-none cursor-not-allowed"
+                            readonly title="Semester tidak dapat diubah setelah peserta dibuat.">
+                    </div>
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold text-teal-950">Nama Lengkap</label>
                         <input type="text" id="edit-nama"
@@ -1377,11 +1655,13 @@
                             <select id="edit-kelas"
                                 class="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none"></select>
                         </div>
-                        <div class="space-y-1">
+                    <div class="space-y-1 relative">
                             <label class="text-[10px] font-bold text-teal-950">Kategori Ujian</label>
-                            <input type="text" id="edit-kategori-display"
-                                class="w-full h-10 bg-gray-100 border border-gray-200 rounded-lg px-3 text-sm text-gray-500 outline-none cursor-not-allowed"
-                                readonly title="Kategori tidak dapat diubah">
+                        <input type="hidden" id="edit-kategori-display">
+                        <select id="edit-kategori-select"
+                            class="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none">
+                        </select>
+                        <span class="material-symbols-outlined absolute right-3 top-1/2 translate-y-[2px] text-gray-400 pointer-events-none text-sm" data-icon="expand_more">expand_more</span>
                         </div>
                     </div>
                     <div class="space-y-1">
@@ -1394,12 +1674,18 @@
                         <select id="edit-tanggal-ujian"
                             class="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none"></select>
                     </div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <input type="checkbox" id="edit-susulan" class="rounded border-gray-300 text-primary focus:ring-primary/50 w-4 h-4">
+                                <label for="edit-susulan" class="text-xs font-bold text-teal-950 cursor-pointer">Tandai sebagai Siswa Ujian Susulan</label>
+                            </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-2 sm:gap-3 shrink-0 flex-wrap">
+                    <button id="btn-hapus-nilai" onclick="window.hapusNilaiModal()"
+                        class="hidden px-5 py-2.5 bg-red-50 border border-red-100 text-red-600 font-bold rounded-xl text-sm hover:bg-red-100 transition-colors active:scale-95 flex-1 sm:flex-none">Hapus Nilai</button>
                     <button onclick="tutupModalEditPeserta()"
-                        class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors">Batal</button>
+                    class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors active:scale-95 flex-1 sm:flex-none">Batal</button>
                     <button onclick="simpanEditPeserta()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors">Simpan
+                    class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors active:scale-95 flex-1 sm:flex-none">Simpan
                         Perubahan</button>
                 </div>
             </div>
@@ -1411,8 +1697,8 @@
                 onclick="tutupModalSegmen()">
             </div>
             <div
-                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Kelola Segmen Ujian</h3>
                         <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin
@@ -1420,25 +1706,58 @@
                         </p>
                     </div>
                     <button onclick="tutupModalSegmen()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
                     <div id="list-segmen-edit" class="space-y-2 max-h-[200px] overflow-y-auto pr-1"></div>
                     <div class="pt-4 border-t border-gray-100 flex gap-2">
                         <input type="text" id="input-segmen-baru" placeholder="Nama segmen baru..."
                             class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
                         <button onclick="tambahSegmen()"
-                            class="p-3 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm">
+                            class="p-3 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm active:scale-95">
                             <span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
                         </button>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end shrink-0">
                     <button onclick="tutupModalSegmen()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm">Selesai</button>
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm active:scale-95">Selesai</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- MODAL KELOLA SEMESTER -->
+        <div id="modal-semester" class="fixed inset-0 z-[110] hidden items-center justify-center p-4">
+            <div class="absolute inset-0 bg-teal-950/40 backdrop-blur-sm transition-opacity"
+                onclick="tutupModalSemester()">
+            </div>
+            <div
+                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
+                    <div>
+                        <h3 id="modal-semester-title" class="font-headline font-bold text-lg text-teal-950">Kelola Daftar Semester</h3>
+                        <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin Utama</p>
+                    </div>
+                    <button onclick="tutupModalSemester()"
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                    <div id="list-semester-edit" class="space-y-2 max-h-[250px] overflow-y-auto pr-1"></div>
+                    <div id="form-semester" class="pt-4 border-t border-gray-100 flex gap-2">
+                        <input type="hidden" id="input-semester-original-nama">
+                        <input type="text" id="input-semester-baru" placeholder="Nama semester..."
+                            class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
+                        <button id="btn-simpan-semester" onclick="simpanSemester()"
+                            class="px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm active:scale-95 flex items-center justify-center">
+                            <span id="btn-simpan-semester-icon" class="material-symbols-outlined text-[18px]">add</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end shrink-0"><button onclick="tutupModalSemester()" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm active:scale-95">Selesai</button></div>
             </div>
         </div>
 
@@ -1448,8 +1767,8 @@
                 onclick="tutupModalKategori()">
             </div>
             <div
-                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 id="modal-kategori-title" class="font-headline font-bold text-lg text-teal-950">Kelola
                             Kategori
@@ -1459,11 +1778,11 @@
                         </p>
                     </div>
                     <button onclick="tutupModalKategori()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
                     <div id="list-kategori-edit" class="space-y-2 max-h-[200px] overflow-y-auto pr-1"></div>
                     <div id="form-kategori" class="pt-4 border-t border-gray-100 space-y-3">
                         <input type="hidden" id="input-kategori-original-nama">
@@ -1475,23 +1794,23 @@
                                     class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20 appearance-none">
                                     <option value="standar">Format Standar (1 Nilai)</option>
                                     <option value="tartil">Format Tartil (5 Aspek & 4 Aspek)</option>
-                                    <option value="lembar">Format Hafalan (15 Baris/Lembar)</option>
+                                    <option value="lembar">Format Lembar (30 Baris / 2 Halaman)</option>
                                 </select>
                                 <span
                                     class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm"
                                     data-icon="expand_more">expand_more</span>
                             </div>
                             <button id="btn-simpan-kategori" onclick="simpanKategori()"
-                                class="px-4 bg-primary text-white font-bold rounded-xl hover:bg-teal-900 transition-colors shadow-sm flex items-center justify-center">
+                                class="px-4 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-teal-900 transition-colors shadow-sm flex items-center justify-center active:scale-95">
                                 <span id="btn-simpan-kategori-icon" class="material-symbols-outlined text-[18px]"
                                     data-icon="add">add</span>
                             </button>
                         </div>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end shrink-0">
                     <button onclick="tutupModalKategori()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm">Selesai</button>
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm active:scale-95">Selesai</button>
                 </div>
             </div>
         </div>
@@ -1502,8 +1821,8 @@
                 onclick="tutupModalKelas()">
             </div>
             <div
-                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 id="modal-kelas-title" class="font-headline font-bold text-lg text-teal-950">Kelola Daftar
                             Kelas
@@ -1513,25 +1832,25 @@
                         </p>
                     </div>
                     <button onclick="tutupModalKelas()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]">close</span>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
                     <div id="list-kelas-edit" class="space-y-2 max-h-[250px] overflow-y-auto pr-1"></div>
                     <div id="form-kelas" class="pt-4 border-t border-gray-100 flex gap-2">
                         <input type="hidden" id="input-kelas-original-nama">
                         <input type="text" id="input-kelas-baru" placeholder="Nama kelas..."
-                            class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
+                            class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
                         <button id="btn-simpan-kelas" onclick="simpanKelas()"
-                            class="p-3 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm">
+                            class="px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm active:scale-95 flex items-center justify-center">
                             <span id="btn-simpan-kelas-icon" class="material-symbols-outlined text-[18px]">add</span>
                         </button>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end"><button
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end shrink-0"><button
                         onclick="tutupModalKelas()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm">Selesai</button>
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm active:scale-95">Selesai</button>
                 </div>
             </div>
         </div>
@@ -1541,8 +1860,8 @@
             <div class="absolute inset-0 bg-teal-950/40 backdrop-blur-sm transition-opacity"
                 onclick="tutupModalTokenPendaftaran()"></div>
             <div
-                class="bg-white rounded-2xl w-full max-w-md z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                class="bg-white rounded-2xl w-full max-w-md z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Token Pendaftaran Penguji</h3>
                         <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin
@@ -1550,11 +1869,11 @@
                         </p>
                     </div>
                     <button onclick="tutupModalTokenPendaftaran()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]">close</span>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
                     <div id="no-token-message" class="text-center text-sm text-gray-500 py-4 hidden">
                         Belum ada token pendaftaran yang dibuat.
                     </div>
@@ -1568,12 +1887,12 @@
                         </button>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-100">
-                        <button id="btn-generate-token"
-                            class="flex-1 px-4 py-2 bg-primary text-white font-bold rounded-xl text-xs hover:bg-teal-900 transition-colors">
+                        <button id="btn-generate-token" onclick="generateToken()"
+                            class="flex-1 px-4 py-2.5 bg-primary text-white font-bold rounded-xl text-xs hover:bg-teal-900 transition-colors active:scale-95">
                             Buat Token Baru
                         </button>
-                        <button id="btn-clear-token"
-                            class="flex-1 px-4 py-2 bg-red-500 text-white font-bold rounded-xl text-xs hover:bg-red-600 transition-colors">
+                        <button id="btn-clear-token" onclick="clearToken()"
+                            class="flex-1 px-4 py-2.5 bg-red-500 text-white font-bold rounded-xl text-xs hover:bg-red-600 transition-colors active:scale-95">
                             Hapus Token
                         </button>
                     </div>
@@ -1581,9 +1900,9 @@
                         penguji
                         baru. Bagikan hanya kepada yang berhak.</p>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end shrink-0">
                     <button onclick="tutupModalTokenPendaftaran()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm">Selesai</button>
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm active:scale-95">Selesai</button>
                 </div>
             </div>
         </div>
@@ -1593,8 +1912,8 @@
             <div class="absolute inset-0 bg-teal-950/40 backdrop-blur-sm transition-opacity"
                 onclick="tutupModalTanggalUjian()"></div>
             <div
-                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Atur Tanggal Ujian</h3>
                         <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin
@@ -1602,29 +1921,29 @@
                         </p>
                     </div>
                     <button onclick="tutupModalTanggalUjian()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]">close</span>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
                     <p class="text-sm text-gray-600">Guru Penguji hanya dapat melakukan penilaian pada tanggal yang
                         ditetapkan. Tambahkan satu atau lebih tanggal ujian.</p>
                     <div class="flex gap-2">
                         <input type="date" id="setting-input-exam-date"
-                            class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm font-bold text-teal-950 focus:ring-2 focus:ring-primary/20 outline-none">
+                            class="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm font-bold text-teal-950 focus:ring-2 focus:ring-primary/20 outline-none">
                         <button onclick="tambahTanggalUjian()"
-                            class="p-3 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm">
+                            class="px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-teal-900 transition-colors shadow-sm active:scale-95 flex items-center justify-center">
                             <span class="material-symbols-outlined text-[18px]">add</span>
                         </button>
                     </div>
                     <div id="list-tanggal-ujian-edit"
-                        class="space-y-2 max-h-[200px] overflow-y-auto pr-1 border-t border-gray-100 pt-4">
+                        class="space-y-2 overflow-y-auto pr-1 border-t border-gray-100 pt-4">
                         <!-- List of dates will be rendered here by JS -->
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3 shrink-0">
                     <button onclick="tutupModalTanggalUjian()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors">Selesai</button>
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors active:scale-95">Selesai</button>
                 </div>
             </div>
         </div>
@@ -1634,8 +1953,8 @@
             <div class="absolute inset-0 bg-teal-950/40 backdrop-blur-sm transition-opacity"
                 onclick="tutupModalAkunPenguji()"></div>
             <div
-                class="bg-white rounded-2xl w-full max-w-md z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                class="bg-white rounded-2xl w-full max-w-md z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Kelola Akun Penguji</h3>
                         <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin
@@ -1643,16 +1962,16 @@
                         </p>
                     </div>
                     <button onclick="tutupModalAkunPenguji()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]">close</span>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
                     <p class="text-xs text-center text-gray-500 bg-blue-50 p-3 rounded-lg border border-blue-100">Untuk
                         menambah penguji baru, berikan <strong>Token Pendaftaran</strong> (dari menu Data Master) kepada
                         guru yang bersangkutan untuk mendaftar melalui halaman login.</p>
                     <div id="list-akun-penguji-edit"
-                        class="space-y-2 max-h-[250px] overflow-y-auto pr-1 pt-4 border-t border-gray-100">
+                        class="space-y-2 max-h-[35vh] overflow-y-auto pr-1 pt-4 border-t border-gray-100">
                         <!-- User list rendered here -->
                     </div>
                     <div id="form-akun-penguji" class="hidden pt-4 border-t border-gray-100 space-y-3">
@@ -1672,19 +1991,89 @@
                         <!-- Password fields are removed as they cannot be changed by admin on client-side -->
                         <div id="container-btn-akun" class="flex justify-end gap-2 pt-2">
                             <button onclick="resetFormAkun()"
-                                class="px-4 py-2 bg-gray-100 text-gray-600 font-bold rounded-xl text-xs hover:bg-gray-200 transition-colors">Batal</button>
+                                class="px-4 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl text-xs hover:bg-gray-200 transition-colors active:scale-95">Batal</button>
                             <button onclick="simpanAkunPenguji()"
-                                class="px-5 py-2 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900">Simpan
+                                class="px-5 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 active:scale-95">Simpan
                                 Perubahan</button>
                         </div>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end shrink-0">
                     <button onclick="tutupModalAkunPenguji()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm">Selesai</button>
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm active:scale-95">Selesai</button>
                 </div>
             </div>
         </div>
+
+    <!-- MODAL KELOLA MATERI (ADMIN UTAMA) -->
+    <div id="modal-materi" class="fixed inset-0 z-[120] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-teal-950/40 backdrop-blur-sm transition-opacity" onclick="tutupModalMateri()">
+        </div>
+        <div
+            class="bg-white rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[95vh]">
+            <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="font-headline font-bold text-lg text-teal-950">Kelola Materi: <span id="materi-kategori-title" class="text-primary"></span></h3>
+                    <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin Utama</p>
+                </div>
+                <button onclick="window.tutupModalMateri()"
+                    class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
+                    <span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
+                </button>
+            </div>
+            <div class="p-4 md:p-6 space-y-4 overflow-y-auto flex-1">
+                <input type="hidden" id="input-materi-kategori-aktif">
+                <div id="list-materi-edit" class="space-y-2"></div>
+                <div class="pt-4 border-t border-gray-100 space-y-3" id="form-tambah-materi">
+                    <div class="flex justify-between items-center">
+                        <h4 class="text-sm font-bold text-teal-950" id="form-materi-title">Tambah Materi Baru</h4>
+                        <button id="btn-toggle-materi-massal" onclick="window.toggleMateriMassal()" class="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded hover:bg-primary/20 transition-colors">Tambah Massal</button>
+                    </div>
+                    
+                    <div id="form-materi-manual" class="space-y-3">
+                        <input type="hidden" id="input-materi-original-no">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div class="col-span-1">
+                                <input type="text" id="input-materi-no" placeholder="Kode (Mis: 1, M1)"
+                                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
+                            </div>
+                            <div class="col-span-1 sm:col-span-2">
+                                <input type="text" id="input-materi-nama" placeholder="Nama Surat/Materi"
+                                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="flex-1">
+                                <input type="text" id="input-materi-ayat" placeholder="Keterangan (Mis: 7 Ayat)"
+                                    class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-teal-950 outline-none focus:ring-2 focus:ring-primary/20">
+                            </div>
+                            <button id="btn-batal-materi" onclick="window.resetFormMateri()" class="hidden px-4 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-sm text-sm active:scale-95">Batal</button>
+                            <button id="btn-simpan-materi" onclick="window.simpanMateri()"
+                                class="px-4 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-teal-900 transition-colors shadow-sm flex items-center justify-center active:scale-95">
+                                <span id="btn-simpan-materi-icon" class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Massal -->
+                    <div id="form-materi-massal" class="hidden space-y-3">
+                        <p class="text-xs text-gray-500">Salin dari Excel (Kode, Nama Materi, Keterangan) dan tempel di bawah:</p>
+                        <textarea id="input-materi-massal" rows="4" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm font-mono resize-y focus:ring-2 focus:ring-primary/20 outline-none" placeholder="1&#9;Al-Fatihah&#9;7 Ayat&#10;2&#9;Al-Baqarah&#9;286 Ayat"></textarea>
+                        <div class="flex justify-end gap-2">
+                            <button onclick="window.toggleMateriMassal()" class="px-4 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors shadow-sm text-sm active:scale-95">Batal</button>
+                            <button onclick="window.simpanMateriMassal()" class="px-4 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-teal-900 transition-colors shadow-sm flex items-center justify-center text-sm active:scale-95">
+                                Simpan Massal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end shrink-0">
+                <button onclick="window.tutupModalMateri()"
+                    class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm active:scale-95">Selesai</button>
+            </div>
+        </div>
+    </div>
 
         <!-- MODAL EDIT ISI SEGMEN (ADMIN UTAMA) -->
         <div id="modal-edit-isi-segmen" class="fixed inset-0 z-[120] hidden items-center justify-center p-4">
@@ -1692,9 +2081,9 @@
                 onclick="tutupModalEditIsi()">
             </div>
             <div
-                class="bg-white rounded-2xl w-full max-w-md z-10 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden border border-gray-100">
+                class="bg-white rounded-2xl w-full max-w-md z-10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-100">
                 <div
-                    class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
+                    class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Isi Segmen: <span
                                 id="label-edit-segmen" class="text-primary"></span></h3>
@@ -1703,18 +2092,18 @@
                         </p>
                     </div>
                     <button onclick="tutupModalEditIsi()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
                     </button>
                 </div>
-                <div class="p-0 overflow-y-auto flex-1 bg-gray-50/30">
-                    <div class="p-6 space-y-2" id="list-master-surat"></div>
+                <div class="p-4 md:p-6 overflow-y-auto flex-1 bg-gray-50/30">
+                    <div class="space-y-2" id="list-master-surat"></div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex justify-end gap-3 shrink-0 flex-wrap">
                     <button onclick="tutupModalEditIsi()"
-                        class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm">Batal</button>
+                        class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm active:scale-95 flex-1 sm:flex-none">Batal</button>
                     <button onclick="simpanIsiSegmen()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm">Simpan
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm active:scale-95 flex-1 sm:flex-none">Simpan
                         Perubahan</button>
                 </div>
             </div>
@@ -1725,32 +2114,41 @@
             <div class="absolute inset-0 bg-teal-950/40 backdrop-blur-sm transition-opacity" onclick="tutupModalKkm()">
             </div>
             <div
-                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
-                <div class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center">
+                class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Atur Nilai KKM</h3>
                         <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Kriteria Ketuntasan
                             Minimal</p>
                     </div>
                     <button onclick="tutupModalKkm()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]">close</span>
                     </button>
                 </div>
-                <div class="p-6 space-y-4">
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
                     <p class="text-sm text-gray-600">Masukkan nilai minimum (skala 1-10) yang diperlukan siswa untuk
                         dinyatakan lulus.</p>
-                    <div class="space-y-1">
+                    <div class="space-y-1 relative">
                         <label class="text-[10px] font-bold text-teal-950">Nilai KKM</label>
-                        <input type="number" id="setting-input-kkm" min="0" max="10" step="0.5"
-                            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-lg font-bold text-center text-teal-950 focus:ring-2 focus:ring-primary/20 outline-none">
+                        <select id="setting-input-kkm"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-lg font-bold text-center text-teal-950 focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer">
+                            <option value="6">6.0</option>
+                            <option value="6.5">6.5</option>
+                            <option value="7">7.0</option>
+                            <option value="7.5">7.5</option>
+                            <option value="8">8.0</option>
+                            <option value="8.5">8.5</option>
+                            <option value="9">9.0</option>
+                        </select>
+                        <span class="material-symbols-outlined absolute right-3 top-1/2 translate-y-1 text-gray-400 pointer-events-none text-xl">expand_more</span>
                     </div>
                 </div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3"><button
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3 shrink-0"><button
                         onclick="tutupModalKkm()"
-                        class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors">Batal</button><button
+                        class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors active:scale-95">Batal</button><button
                         onclick="simpanKkm()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors">Simpan</button>
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors active:scale-95">Simpan</button>
                 </div>
             </div>
         </div>
@@ -1760,9 +2158,9 @@
             <div class="absolute inset-0 bg-teal-950/60 backdrop-blur-sm transition-opacity"
                 onclick="tutupModalLaporanDetail()"></div>
             <div
-                class="bg-white rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[85vh]">
+                class="bg-white rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
                 <div
-                    class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
+                    class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 id="laporan-detail-title" class="font-headline font-bold text-lg text-teal-950">Rincian
                             Nilai
@@ -1771,38 +2169,50 @@
                             class="text-[11px] text-gray-500 font-medium uppercase tracking-widest"></p>
                     </div>
                     <button onclick="tutupModalLaporanDetail()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
                         <span class="material-symbols-outlined text-[20px]">close</span>
                     </button>
                 </div>
-                <div id="laporan-detail-content" class="p-6 space-y-2 overflow-y-auto"></div>
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3 shrink-0"><button
+                <div id="laporan-detail-content" class="p-4 md:p-6 space-y-2 overflow-y-auto"></div>
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3 shrink-0"><button
                         onclick="tutupModalLaporanDetail()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors">Tutup</button>
+                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors active:scale-95">Tutup</button>
                 </div>
             </div>
         </div>
 
         <!-- MODAL POP-UP FORM PENILAIAN PER-SURAT / PER-LEMBAR -->
-        <div id="modal-penilaian" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <div id="modal-penilaian" class="fixed inset-0 z-[100] hidden items-end sm:items-center justify-center sm:p-4">
             <div class="absolute inset-0 bg-teal-950/40 backdrop-blur-sm transition-opacity" onclick="tutupModal()">
             </div>
             <div
-                class="bg-white rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[95vh]">
+                class="bg-white rounded-t-3xl sm:rounded-2xl w-full max-w-lg z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[95dvh] sm:max-h-[90vh]">
+                <div class="w-full flex justify-center pt-3 pb-1 sm:hidden bg-gray-50/80">
+                    <div class="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+                </div>
                 <div
-                    class="px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
-                    <div>
-                        <h3 id="modal-title" class="font-headline font-bold text-lg text-teal-950">Penilaian</h3>
-                        <p id="modal-subtitle" class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">
+                    class="px-4 md:px-6 py-3 sm:py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
+                    <div class="flex-1 min-w-0 pr-2">
+                        <div class="flex items-center gap-2 mb-0.5 flex-wrap">
+                            <h3 id="modal-title" class="font-headline font-bold text-lg text-teal-950 leading-tight truncate">Penilaian</h3>
+                            <span id="auto-save-indicator" class="text-[10px] font-bold text-emerald-600 hidden bg-emerald-50 px-2 py-0.5 rounded-full transition-opacity duration-300 border border-emerald-100 whitespace-nowrap">Tersimpan otomatis</span>
+                        </div>
+                        <p id="modal-subtitle" class="text-[11px] text-gray-500 font-medium uppercase tracking-widest truncate">
                             Silakan isi nilai dan catatan</p>
                     </div>
-                    <button onclick="tutupModal()"
-                        class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
-                        <span class="material-symbols-outlined text-[20px]" data-icon="close">close</span>
-                    </button>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button id="btn-hapus-nilai" onclick="window.hapusNilaiModal()"
+                            class="hidden p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90" title="Hapus Nilai">
+                            <span class="material-symbols-outlined text-[22px]" data-icon="delete">delete</span>
+                        </button>
+                        <button onclick="tutupModal()"
+                            class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors active:scale-90" title="Tutup">
+                            <span class="material-symbols-outlined text-[24px]" data-icon="close">close</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="p-6 space-y-6 overflow-y-auto">
+                <div class="p-4 md:p-6 space-y-6 overflow-y-auto pb-12 sm:pb-6">
                     <div class="space-y-2">
                         <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">Nama
                             Penguji</label>
@@ -2048,6 +2458,8 @@
                             </span>
                             <span id="kkm-info-tajwid" class="text-xs font-bold text-gray-400"></span>
                         </h4>
+                        <div class="overflow-x-auto hide-scrollbar -mx-2 px-2 pb-2">
+                            <div class="min-w-[340px]">
                         <div class="grid grid-cols-10 gap-1.5 sm:gap-2 mb-2">
                             <div
                                 class="col-span-10 text-center font-bold text-[10px] text-teal-950 border-b border-emerald-200 pb-1 mb-1">
@@ -2101,6 +2513,8 @@
                                 class="w-full h-8 bg-white border border-gray-200 rounded px-0.5 font-bold text-teal-950 text-[10px] sm:text-xs outline-none text-center"
                                 oninput="hitungTotalTajwid()">
                         </div>
+                            </div>
+                        </div>
                         <div
                             class="h-10 bg-primary/10 border border-primary/20 rounded-lg px-4 flex items-center justify-between mt-4">
                             <span class="text-[10px] font-bold text-primary uppercase tracking-widest">Total Nilai
@@ -2115,27 +2529,104 @@
                                 Koreksi</label></div>
                         <div class="flex flex-wrap gap-2 mb-2">
                             <button onclick="tambahCatatanModal('Mumtaz, pertahankan!')"
-                                class="px-3 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[10px] font-bold rounded-lg transition-colors border border-emerald-100 shadow-sm">Mumtaz</button>
+                                class="px-3 py-2 sm:py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs sm:text-[10px] font-bold rounded-xl sm:rounded-lg transition-colors border border-emerald-100 shadow-sm active:scale-95">Mumtaz</button>
                             <button onclick="tambahCatatanModal('Perhatikan panjang Mad')"
-                                class="px-3 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 text-[10px] font-bold rounded-lg transition-colors border border-amber-100 shadow-sm">Cek
+                                class="px-3 py-2 sm:py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs sm:text-[10px] font-bold rounded-xl sm:rounded-lg transition-colors border border-amber-100 shadow-sm active:scale-95">Cek
                                 Mad</button>
                             <button onclick="tambahCatatanModal('Dengung (Ghunnah) kurang ditahan')"
-                                class="px-3 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 text-[10px] font-bold rounded-lg transition-colors border border-blue-100 shadow-sm">Ghunnah</button>
+                                class="px-3 py-2 sm:py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs sm:text-[10px] font-bold rounded-xl sm:rounded-lg transition-colors border border-blue-100 shadow-sm active:scale-95">Ghunnah</button>
                             <button onclick="tambahCatatanModal('Makhraj huruf perlu diperbaiki')"
-                                class="px-3 py-1 bg-purple-50 text-purple-700 hover:bg-purple-100 text-[10px] font-bold rounded-lg transition-colors border border-purple-100 shadow-sm">Makhraj</button>
+                                class="px-3 py-2 sm:py-1 bg-purple-50 text-purple-700 hover:bg-purple-100 text-xs sm:text-[10px] font-bold rounded-xl sm:rounded-lg transition-colors border border-purple-100 shadow-sm active:scale-95">Makhraj</button>
+                        <button onclick="tambahCatatanModal('Hafalan kurang lancar, perlu murojaah')"
+                            class="px-3 py-2 sm:py-1 bg-red-50 text-red-700 hover:bg-red-100 text-xs sm:text-[10px] font-bold rounded-xl sm:rounded-lg transition-colors border border-red-100 shadow-sm active:scale-95">Kurang Lancar</button>
+                        <button onclick="tambahCatatanModal('Sering ragu / lupa sambungan ayat')"
+                            class="px-3 py-2 sm:py-1 bg-orange-50 text-orange-700 hover:bg-orange-100 text-xs sm:text-[10px] font-bold rounded-xl sm:rounded-lg transition-colors border border-orange-100 shadow-sm active:scale-95">Lupa Sambungan</button>
                         </div>
                         <textarea id="modal-input-catatan"
                             class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm font-medium text-teal-950 min-h-[80px] resize-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 outline-none transition-all shadow-inner"
                             placeholder="Ketik catatan khusus di sini..."></textarea>
                     </div>
-                </div>
 
-                <div class="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3 shrink-0">
-                    <button onclick="tutupModal()"
-                        class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors">Batal</button>
-                    <button onclick="simpanNilaiModal()"
-                        class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 flex items-center gap-2 transition-colors"><span
-                            class="material-symbols-outlined text-[18px]" data-icon="save">save</span> Simpan</button>
+                    <div id="area-riwayat-nilai" class="hidden space-y-2 mt-4 pt-4 border-t border-gray-100">
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-widest">Riwayat Perubahan Nilai</label>
+                        <div id="list-riwayat-nilai" class="space-y-2 max-h-32 overflow-y-auto text-xs pr-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL BULK EDIT PESERTA -->
+        <div id="modal-bulk-edit" class="fixed inset-0 z-[160] hidden items-center justify-center p-4">
+            <div class="absolute inset-0 bg-teal-950/60 backdrop-blur-sm transition-opacity" onclick="tutupModalBulkEdit()"></div>
+            <div class="bg-white rounded-2xl w-full max-w-sm z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
+                    <div>
+                        <h3 class="font-headline font-bold text-lg text-teal-950" id="bulk-edit-title">Ubah Data Massal</h3>
+                        <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest"><span id="bulk-edit-count">0</span> Peserta Terpilih</p>
+                    </div>
+                    <button onclick="tutupModalBulkEdit()" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+                <div class="p-4 md:p-6 space-y-4 overflow-y-auto">
+                    <input type="hidden" id="bulk-edit-type">
+                    <div id="bulk-edit-field-pembimbing" class="hidden space-y-1">
+                        <label class="text-[10px] font-bold text-teal-950">Nama Pembimbing Baru</label>
+                        <input type="text" id="bulk-input-pembimbing" class="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Misal: Ust. Fulan">
+                    </div>
+                    <div id="bulk-edit-field-jadwal" class="hidden space-y-1">
+                        <label class="text-[10px] font-bold text-teal-950">Tanggal Ujian Baru</label>
+                        <select id="bulk-input-jadwal" class="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none"></select>
+                    </div>
+                </div>
+                <div class="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3 flex-wrap shrink-0">
+                    <button onclick="tutupModalBulkEdit()" class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-50 transition-colors">Batal</button>
+                    <button onclick="simpanBulkEdit()" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors">Simpan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL NILAI MASSAL (HANYA ADMIN UTAMA) -->
+        <div id="modal-nilai-massal" class="fixed inset-0 z-[160] hidden items-center justify-center p-4">
+            <div class="absolute inset-0 bg-teal-950/60 backdrop-blur-sm transition-opacity" onclick="window.tutupModalNilaiMassal()"></div>
+            <div class="bg-white rounded-2xl w-full max-w-3xl z-10 shadow-2xl flex flex-col transform transition-all overflow-hidden border border-gray-100 max-h-[90vh]">
+                <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
+                    <div>
+                        <h3 class="font-headline font-bold text-lg text-teal-950">Input Nilai Massal</h3>
+                        <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Hak Akses: Admin Utama</p>
+                    </div>
+                    <button onclick="window.tutupModalNilaiMassal()" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors active:scale-90">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+                </div>
+                <div class="p-4 md:p-6 flex-1 overflow-y-auto space-y-4 bg-gray-50/30">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-teal-950">Kategori Ujian</label>
+                            <select id="nilai-massal-kategori" onchange="window.onChangeKategoriMassal()" class="w-full h-10 bg-white border border-gray-200 rounded-lg px-3 text-sm focus:ring-2 focus:ring-primary/20 outline-none appearance-none cursor-pointer"></select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold text-teal-950">Materi / Surat <span class="text-gray-400 font-normal">(Tahan Ctrl/Cmd untuk pilih banyak)</span></label>
+                            <select id="nilai-massal-materi" multiple onchange="window.renderDaftarSiswaNilaiMassal()" class="w-full h-24 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer hide-scrollbar">
+                                <option value="" disabled>Pilih Kategori Dahulu...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-end">
+                            <label class="text-[10px] font-bold text-teal-950">Daftar Peserta & Form Nilai</label>
+                            <span id="nilai-massal-stats" class="text-xs font-bold text-gray-500">0 Peserta</span>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm" id="container-siswa-massal">
+                            <p class="text-center text-xs text-gray-400 py-8 italic">Silakan pilih kategori dan materi.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-4 md:px-6 py-4 bg-white border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                    <button onclick="window.tutupModalNilaiMassal()" class="px-5 py-2.5 bg-gray-50 border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-100 transition-colors">Batal</button>
+                    <button onclick="window.simpanNilaiMassal()" class="px-6 py-2.5 bg-primary text-white font-bold rounded-xl shadow-sm text-sm hover:bg-teal-900 transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">save</span> Simpan Massal
+                    </button>
                 </div>
             </div>
         </div>
@@ -2203,42 +2694,120 @@
         <!-- Mobile Bottom Navigation -->
         <nav id="mobile-bottom-nav"
             class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 flex justify-around items-center px-2 pt-2 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-40"
-            style="padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
+            style="padding-bottom: env(safe-area-inset-bottom);">
             <a href="#" onclick="event.preventDefault(); switchView('dashboard')" id="mobile-nav-dashboard"
-                class="flex flex-col items-center p-2 text-primary transition-all min-w-[60px] scale-110">
+                class="flex flex-col items-center p-2 text-primary transition-all duration-200 min-w-[60px] scale-110 active:scale-100">
                 <span class="material-symbols-outlined text-2xl mb-0.5 transition-all"
                     style="font-variation-settings: 'FILL' 1, 'wght' 600">dashboard</span>
                 <span class="text-[10px] font-bold">Dasbor</span>
             </a>
             <a href="#" onclick="event.preventDefault(); switchView('peserta')" id="mobile-nav-peserta"
-                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all min-w-[60px]">
+                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all duration-200 min-w-[60px] active:scale-90 active:opacity-70">
                 <span class="material-symbols-outlined text-2xl mb-0.5 transition-all">group</span>
                 <span class="text-[10px] font-semibold">Peserta</span>
             </a>
             <a href="#" onclick="event.preventDefault(); switchView('ujian')" id="mobile-nav-ujian"
-                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all min-w-[60px]">
+                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all duration-200 min-w-[60px] active:scale-90 active:opacity-70">
                 <span class="material-symbols-outlined text-2xl mb-0.5 transition-all">menu_book</span>
                 <span class="text-[10px] font-semibold">Ujian</span>
             </a>
             <a href="#" onclick="event.preventDefault(); switchView('laporan')" id="mobile-nav-laporan"
-                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all min-w-[60px]">
+                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all duration-200 min-w-[60px] active:scale-90 active:opacity-70">
                 <span class="material-symbols-outlined text-2xl mb-0.5 transition-all">assessment</span>
                 <span class="text-[10px] font-semibold">Laporan</span>
             </a>
             <a href="#" onclick="event.preventDefault(); switchView('pengaturan')" id="mobile-nav-pengaturan"
-                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all min-w-[60px]">
+                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all duration-200 min-w-[60px] active:scale-90 active:opacity-70">
                 <span class="material-symbols-outlined text-2xl mb-0.5 transition-all">settings</span>
                 <span class="text-[10px] font-semibold">Pengaturan</span>
+            </a>
+            <a id="mobile-nav-penilaian-detail" class="hidden" href="#">
+                <span class="material-symbols-outlined"></span>
+                <span></span>
             </a>
         </nav>
 
         <!-- Global Footer -->
-        <div class="fixed bottom-3 right-5 z-40 pointer-events-none hidden md:block">
-            <p
-                class="text-[10px] text-gray-400 font-bold tracking-wide bg-white/60 backdrop-blur-md px-3 py-1.5 rounded-full shadow-sm border border-gray-100">
-                © 2026 Juman Jayyidin</p>
-        </div>
+    <div class="fixed bottom-[80px] left-1/2 -translate-x-1/2 md:bottom-3 md:right-5 md:left-auto md:translate-x-0 z-[60] pointer-events-none transition-all duration-300">
+        <p class="text-[10px] text-gray-400/90 font-bold tracking-widest uppercase bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full shadow-sm border border-gray-200 whitespace-nowrap">
+            © 2026 Juman Jayyidin
+        </p>
+    </div>
 
+    <!-- Global Pull to Refresh Indicator -->
+    <div id="global-ptr" class="fixed top-0 left-1/2 -translate-x-1/2 z-[200] transition-transform duration-200 pointer-events-none" style="transform: translate(-50%, -100px); opacity: 0;">
+        <div class="w-10 h-10 mt-4 bg-white rounded-full shadow-lg flex items-center justify-center text-primary border border-gray-100">
+            <span class="material-symbols-outlined text-2xl transition-transform duration-200" id="global-ptr-icon">refresh</span>
+        </div>
+    </div>
+
+    <!-- Script Pull to Refresh Mobile -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const ptr = document.getElementById('global-ptr');
+            const ptrIcon = document.getElementById('global-ptr-icon');
+            let startY = 0;
+            let currentY = 0;
+            let isPulling = false;
+            let pullDistance = 0;
+            const threshold = 180; // Maksimal tarikan (px)
+            const refreshTrigger = 90; // Jarak untuk memicu refresh (px)
+
+            // Cek elemen kontainer <main> mana yang sedang aktif dilihat user
+            function getActiveMain() {
+                return document.querySelector('div[id^="view-"]:not(.hidden) main');
+            }
+
+            document.addEventListener('touchstart', (e) => {
+                const main = getActiveMain();
+                if (main && main.scrollTop <= 0) {
+                    startY = e.touches[0].clientY;
+                    isPulling = true;
+                    pullDistance = 0;
+                    ptr.style.transition = 'none';
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isPulling) return;
+                currentY = e.touches[0].clientY;
+                pullDistance = currentY - startY;
+
+                if (pullDistance > 0) {
+                    const main = getActiveMain();
+                    if (main && main.scrollTop <= 0) {
+                        if (e.cancelable) e.preventDefault(); // Hentikan scroll bawaan browser
+                        
+                        const pullResisted = Math.min(pullDistance * 0.4, threshold);
+                        const translateY = -100 + pullResisted;
+                        
+                        ptr.style.transform = `translate(-50%, ${translateY}px)`;
+                        ptr.style.opacity = Math.min(pullResisted / refreshTrigger, 1).toString();
+                        ptrIcon.style.transform = `rotate(${pullResisted >= refreshTrigger ? 180 : 0}deg)`;
+                    }
+                }
+            }, { passive: false });
+
+            document.addEventListener('touchend', () => {
+                if (!isPulling) return;
+                isPulling = false;
+                ptr.style.transition = 'all 0.3s ease-out';
+                
+                const pullResisted = Math.min(pullDistance * 0.4, threshold);
+                if (pullDistance > 0 && pullResisted >= refreshTrigger) {
+                    ptr.style.transform = `translate(-50%, 20px)`;
+                    ptrIcon.style.transform = 'rotate(0deg)'; 
+                    ptrIcon.classList.add('animate-spin'); // Mulai animasi memutar
+                    
+                    setTimeout(() => window.location.reload(), 500); // Segarkan halaman
+                } else {
+                    ptr.style.transform = 'translate(-50%, -100px)';
+                    ptr.style.opacity = '0';
+                    ptrIcon.style.transform = 'rotate(0deg)';
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>

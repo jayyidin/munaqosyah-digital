@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Ujian Munaqosyah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { primary: "#004b50", secondary: "#cfe6f2" },
+                    fontFamily: { headline: ["Manrope", "sans-serif"], body: ["Inter", "sans-serif"] }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f2f4f4; }
+        h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
+    </style>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Load Configurations & Master Data -->
+    <script src="js/firebase-config.js"></script>
+    <script src="data.js"></script>
+</head>
+<body class="text-gray-800 p-4 md:p-8 min-h-screen flex flex-col justify-center">
+    <div class="max-w-3xl w-full mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 my-auto">
+        
+        <!-- Header Aplikasi -->
+        <div class="bg-primary p-6 text-white text-center shadow-inner relative overflow-hidden flex flex-col items-center justify-center">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="w-16 h-16 bg-white/10 p-2 rounded-xl mb-3 hidden items-center justify-center backdrop-blur-sm shadow-inner" id="app-logo-container">
+                <img id="app-logo-display" src="" alt="Logo Aplikasi" class="w-full h-full object-contain drop-shadow-md">
+            </div>
+            <h1 class="text-2xl font-extrabold tracking-tight" id="app-name-display">Hasil Ujian Munaqosyah</h1>
+            <p class="text-teal-100 mt-1 text-sm font-medium" id="school-name-display">Memuat data institusi...</p>
+        </div>
+        
+        <div class="p-6 md:p-8" id="content-container">
+            
+            <!-- Tampilan Menunggu Data -->
+            <div class="text-center py-12" id="loading-state">
+                <div class="w-12 h-12 border-4 border-t-primary border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gray-500 font-medium animate-pulse">Mengambil data dari server...</p>
+            </div>
+            
+            <!-- Tampilan Data Hasil Ujian -->
+            <div id="result-state" class="hidden space-y-8 animate-[fadeIn_0.5s_ease-out]">
+                
+                <!-- Info Santri -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-5 rounded-2xl border border-gray-200">
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Nama Santri</p>
+                        <p class="text-xl font-extrabold text-primary leading-tight" id="student-name">-</p>
+                        <p class="text-xs text-gray-500 font-semibold mt-1" id="student-id">-</p>
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <div class="flex gap-2 items-center mb-1">
+                            <span class="text-xs font-bold text-gray-600 w-16">Kategori:</span>
+                            <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20" id="student-category">-</span>
+                        </div>
+                        <div class="flex gap-2 items-center mb-1">
+                            <span class="text-xs font-bold text-gray-600 w-16">Kelas:</span>
+                            <span class="text-xs font-bold text-gray-800" id="student-class">-</span>
+                        </div>
+                        <div class="flex gap-2 items-center">
+                            <span class="text-xs font-bold text-gray-600 w-16">Semester:</span>
+                            <span class="text-xs font-bold text-gray-800" id="student-semester">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skor Rata-rata -->
+                <div class="flex gap-4 justify-around text-center border-y border-gray-100 py-6">
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Rata-rata Nilai</p>
+                        <p class="text-4xl font-black text-primary" id="student-avg">0.0</p>
+                    </div>
+                    <div class="w-px bg-gray-100"></div>
+                    <div>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Materi Selesai</p>
+                        <p class="text-4xl font-black text-primary" id="student-progress">0<span class="text-xl text-gray-400">/0</span></p>
+                    </div>
+                </div>
+
+                <!-- Tabel Rincian -->
+                <div>
+                    <h3 class="text-lg font-extrabold text-teal-950 mb-3">Rincian Nilai Per Materi</h3>
+                    <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-gray-100 border-b border-gray-200 text-gray-500">
+                                <tr>
+                                    <th class="px-4 py-3 font-bold text-xs uppercase tracking-wider">Materi</th>
+                                    <th class="px-4 py-3 font-bold text-xs uppercase tracking-wider text-center">Nilai</th>
+                                    <th class="px-4 py-3 font-bold text-xs uppercase tracking-wider">Penguji</th>
+                                    <th class="px-4 py-3 font-bold text-xs uppercase tracking-wider">Catatan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="divide-y divide-gray-100 bg-white">
+                                <!-- Baris tabel di-render melalui JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tampilan Error/Data Kosong -->
+            <div id="error-state" class="hidden text-center py-10">
+                <div class="text-red-500 text-6xl mb-4 opacity-50">⚠️</div>
+                <h3 class="text-xl font-extrabold text-teal-950">Data Tidak Ditemukan</h3>
+                <p class="text-sm text-gray-500 mt-2 max-w-sm mx-auto" id="error-message">Tautan ini mungkin sudah kedaluwarsa atau tidak valid. Silakan hubungi pihak sekolah.</p>
+            </div>
+        </div>
+        
+        <div class="bg-gray-50 p-4 text-center border-t border-gray-200">
+            <p id="footer-copyright" class="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Dihasilkan oleh Aplikasi Munaqosyah Digital</p>
+        </div>
+    </div>
+    
+    <!-- Global Footer -->
+    <div class="fixed bottom-3 left-1/2 -translate-x-1/2 md:right-5 md:left-auto md:translate-x-0 z-[60] pointer-events-none transition-all duration-300">
+        <p class="text-[10px] text-gray-400/90 font-bold tracking-widest uppercase bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full shadow-sm border border-gray-200 whitespace-nowrap">
+            © 2026 Juman Jayyidin
+        </p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const studentId = params.get('id');
+            const kategori = params.get('kat');
+            const semester = params.get('sem');
+
+            if (!studentId || !kategori || !semester) {
+                showError("Tautan ini tidak lengkap. Pastikan Anda menyalin seluruh link dengan benar.");
+                return;
+            }
+
+            try {
+                const settingsDoc = await db.collection('appData').doc('settings').get();
+                if (settingsDoc.exists) {
+                    const settings = settingsDoc.data();
+                    const appName = settings.appName ? settings.appName.replace(/<br\s*\/?>/gi, ' ') : 'Aplikasi Munaqosyah';
+                    
+                    document.getElementById('app-name-display').innerText = `Hasil Ujian - ${appName}`;
+                    document.getElementById('footer-copyright').innerText = `© ${new Date().getFullYear()} ${appName} - Dihasilkan oleh ${appName}`;
+                    
+                    if (settings.schoolName) {
+                        document.getElementById('school-name-display').innerText = settings.schoolName;
+                        document.title = `Hasil Ujian - ${appName} ${settings.schoolName}`;
+                    } else {
+                        document.getElementById('school-name-display').classList.add('hidden');
+                        document.title = `Hasil Ujian - ${appName}`;
+                    }
+                    
+                    if (settings.logoUrl) {
+                        document.getElementById('app-logo-display').src = settings.logoUrl;
+                        document.getElementById('app-logo-container').classList.remove('hidden');
+                        document.getElementById('app-logo-container').classList.add('flex');
+                    }
+                }
+
+                const pesertaDoc = await db.collection('dataPeserta').doc(`${semester}_${kategori}`).get();
+                let pesertaList = [];
+                if (pesertaDoc.exists) { pesertaList = pesertaDoc.data().list || []; } 
+                else { const oldPesertaDoc = await db.collection('dataPeserta').doc(kategori).get(); if (oldPesertaDoc.exists) pesertaList = oldPesertaDoc.data().list || []; }
+
+                const student = pesertaList.find(p => p.id === studentId);
+                if (!student) { showError("Data peserta tidak ditemukan pada semester dan kategori ini."); return; }
+
+                document.getElementById('student-name').innerText = student.nama;
+                document.getElementById('student-id').innerText = student.id;
+                document.getElementById('student-category').innerText = kategori;
+                document.getElementById('student-class').innerText = student.kelas;
+                document.getElementById('student-semester').innerText = semester;
+
+                const materiList = getMateriListLocal(kategori);
+                let html = '', totalNilai = 0, countDinilai = 0;
+
+                for (const materi of materiList) {
+                    const keyBaru = `${semester}_${studentId}_${materi.no}`;
+                    const keyLama = `${studentId}_${materi.no}`;
+                    
+                    let nilaiData = null;
+                    const docBaru = await db.collection('statePenilaian').doc(keyBaru).get();
+                    if (docBaru.exists) { nilaiData = docBaru.data(); } 
+                    else { const docLama = await db.collection('statePenilaian').doc(keyLama).get(); if (docLama.exists) nilaiData = docLama.data(); }
+
+                    if (nilaiData && nilaiData.nilai !== undefined) {
+                        totalNilai += nilaiData.nilai; countDinilai++;
+                        html += `<tr class="hover:bg-gray-50 transition-colors"><td class="px-4 py-3 font-bold text-gray-800">${materi.nama} <span class="text-[10px] text-gray-400 block font-normal mt-0.5">${materi.ayat}</span></td><td class="px-4 py-3 text-center font-extrabold text-primary text-lg">${nilaiData.nilai}</td><td class="px-4 py-3 text-gray-500 text-xs font-medium">${nilaiData.penguji || '-'}</td><td class="px-4 py-3 text-gray-600 text-xs max-w-[200px] truncate" title="${nilaiData.catatan || '-'}">${nilaiData.catatan || '-'}</td></tr>`;
+                    } else {
+                        html += `<tr class="hover:bg-gray-50 bg-gray-50/50"><td class="px-4 py-3 font-semibold text-gray-400">${materi.nama} <span class="text-[10px] block font-normal mt-0.5">${materi.ayat}</span></td><td class="px-4 py-3 text-center text-gray-400 italic text-[11px] font-bold">Belum Dinilai</td><td class="px-4 py-3 text-gray-400 text-xs">-</td><td class="px-4 py-3 text-gray-400 text-xs">-</td></tr>`;
+                    }
+                }
+                document.getElementById('table-body').innerHTML = html;
+                document.getElementById('student-progress').innerHTML = `${countDinilai}<span class="text-xl text-gray-400 font-medium">/${materiList.length}</span>`;
+                document.getElementById('student-avg').innerText = countDinilai > 0 ? (totalNilai / countDinilai).toFixed(1) : '0.0';
+
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('result-state').classList.remove('hidden');
+            } catch (error) { showError("Koneksi gagal. Pastikan pengaturan Firestore mengizinkan hak akses baca publik (read)."); }
+        });
+
+        function getMateriListLocal(kategori) { if (typeof dataSurat === 'undefined' || !dataSurat || !kategori) return []; const raw = dataSurat[kategori]; if (!raw) return []; let items = []; if (Array.isArray(raw)) items = raw; else if (typeof raw === 'object') { if (raw.list) items = Array.isArray(raw.list) ? raw.list : Object.values(raw.list); else items = Object.values(raw); } return items.flat().filter(item => item && typeof item === 'object' && item.no !== undefined && item.nama !== undefined); }
+        function showError(msg) { document.getElementById('loading-state').classList.add('hidden'); document.getElementById('error-state').classList.remove('hidden'); document.getElementById('error-message').innerText = msg; }
+    </script>
+</body>
+</html>

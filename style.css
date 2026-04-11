@@ -70,7 +70,6 @@ h4,
 .loader-spinner-animate,
 .form-entry-animate {
     animation: content-entry 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-    opacity: 0;
 }
 
 .loader-text-animate {
@@ -144,4 +143,183 @@ h4,
 .dropdown-visible {
     opacity: 1;
     transform: scale(1);
+}
+
+input,
+select,
+textarea,
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 767px) {
+    html {
+        font-size: 15px;
+    }
+
+    body {
+        overflow: hidden;
+    }
+
+    main {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #mobile-bottom-nav {
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+
+    #mobile-bottom-nav a {
+        min-width: 58px;
+    }
+
+    #mobile-bottom-nav .material-symbols-outlined {
+        font-size: 1.45rem;
+    }
+
+    #view-dashboard header,
+    #view-peserta header,
+    #view-ujian header,
+    #view-laporan header,
+    #view-pengaturan header,
+    #view-penilaian-detail header {
+        padding-top: max(0.75rem, env(safe-area-inset-top));
+    }
+
+    #view-dashboard main,
+    #view-peserta main,
+    #view-ujian main,
+    #view-laporan main,
+    #view-pengaturan main,
+    #view-penilaian-detail main {
+            padding-bottom: calc(3.75rem + max(0.5rem, env(safe-area-inset-bottom)));
+    }
+
+    #view-dtashboard .max-w-7xl,
+    #view-peserta .max-w-6xl,
+    #view-ujian .max-w-5xl,
+    #view-penilaian-detail .max-w-4xl,
+    #view-laporan .max-w-6xl,
+    #view-pengaturan .max-w-6xl {
+        width: 100%;
+    }
+
+    #view-peserta table,
+    #view-laporan table {
+        min-width: 760px;
+    }
+
+    #view-peserta .overflow-x-auto,
+    #view-laporan .overflow-x-auto {
+        scrollbar-width: thin;
+    }
+
+    #peserta-quick-stats {
+        grid-template-columns: 1fr;
+    }
+
+    #container-peserta-ujian {
+        grid-template-columns: 1fr;
+    }
+
+    #detail-student-header {
+        gap: 1rem;
+    }
+
+    #container-segmen-tabs {
+        width: 100%;
+        flex-wrap: nowrap;
+    }
+
+    #container-segmen-tabs button {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    #slideover-panel {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    #modal-tambah-peserta > div:last-child,
+    #modal-edit-peserta > div:last-child,
+    #modal-kategori > div:last-child,
+    #modal-kelas > div:last-child,
+    #modal-token-pendaftaran > div:last-child,
+    #modal-tanggal-ujian > div:last-child,
+    #modal-akun-penguji > div:last-child,
+    #modal-edit-isi-segmen > div:last-child,
+    #modal-penilaian > div:last-child,
+    #modal-laporan-detail > div:last-child,
+    #modal-kkm > div:last-child,
+    #modal-confirm > div:last-child,
+    #modal-alert > div:last-child,
+    #modal-prompt > div:last-child {
+        width: min(100%, 100vw - 1rem);
+        max-height: calc(100vh - 1rem);
+        border-radius: 1.25rem;
+    }
+
+    #modal-tambah-peserta .p-6,
+    #modal-edit-peserta .p-6,
+    #modal-kategori .p-6,
+    #modal-kelas .p-6,
+    #modal-token-pendaftaran .p-6,
+    #modal-tanggal-ujian .p-6,
+    #modal-akun-penguji .p-6,
+    #modal-edit-isi-segmen .p-6,
+    #modal-penilaian .p-6,
+    #modal-laporan-detail .p-6,
+    #modal-kkm .p-6 {
+        padding: 1rem;
+    }
+
+    #footer-tambah-peserta,
+    #modal-edit-peserta .border-t,
+    #modal-kategori .border-t,
+    #modal-kelas .border-t,
+    #modal-token-pendaftaran .border-t,
+    #modal-tanggal-ujian .border-t,
+    #modal-akun-penguji .border-t,
+    #modal-edit-isi-segmen .border-t,
+    #modal-penilaian .border-t,
+    #modal-laporan-detail .border-t,
+    #modal-kkm .border-t,
+    #modal-confirm .border-t,
+    #modal-alert .border-t,
+    #modal-prompt .border-t {
+        position: sticky;
+        bottom: 0;
+        background: rgba(249, 250, 251, 0.96);
+        backdrop-filter: blur(10px);
+    }
+
+    #form-tambah-manual .grid,
+    #form-kategori .flex,
+    #form-kelas,
+    #container-btn-akun,
+    #modal-token-pendaftaran .sm\:flex-row,
+    #modal-tanggal-ujian .flex.gap-2 {
+        flex-direction: column;
+    }
+
+    #form-kategori .relative,
+    #form-kelas input,
+    #container-btn-akun button,
+    #modal-token-pendaftaran button,
+    #modal-tanggal-ujian input {
+        width: 100%;
+    }
+
+    #nilai-radio-container-standar,
+    #nilai-radio-container-lembar {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0.5rem;
+    }
+
+    #nilai-radio-container-standar label,
+    #nilai-radio-container-lembar label {
+        width: 100%;
+    }
 }

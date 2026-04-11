@@ -1,0 +1,11 @@
+﻿87ddf011ef021ae5a8ef980c7598b2a6de9fe95f refactor: simplify layout by removing mobile sidebar and consolidating dashboard structure
+9cf633abf5bccbaf8889af7f6c0a7277b3fde8da feat: add fade animations to sidebar backdrop and update mobile sidebar layout with close button
+cca07a05ef79889aba2a5576f92e1114b4029036 feat: add scrollable sidebar navigation and improve sidebar collapse logic with null checks
+fbdaca86c5abbff01f9f6f513b7b53eadfd71cc5 refactor: update category and class management forms to support editing and display KKM information in assessment views
+e94eacd936daf7f391addf17739ab12ead15c6f7 fix: correct introductory text in index.html landing section
+1a6dee30f2d6ac86f4a86e7d2aa6614a9f358a24 style: adjust vertical padding and margins in sidebar layout
+8e0617262a4030c892aae9c9abad6753a84ba84a feat: enhance student progress visualization with dynamic indicators and update UI layout for better readability
+f7d18ea3a7f32f909512085d5b78cf110506e34a refactor: decouple dashboard pagination, add pull-to-refresh, and improve app settings persistence
+31e9fcb59b012b75153c82a850d25c53f6292ff6 feat: implement session-based authentication persistence and enhance loading screen UI
+6032cb0ccdb5ebef05f97125f097428e9f6912cc feat: implement success registration modal and responsive sidebar toggle behavior
+b964ae2bbc18a05810a199b621d844f1530c6f93 first commit

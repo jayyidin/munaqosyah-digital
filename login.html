@@ -13,20 +13,36 @@
 
     <!-- Otomatis masuk ke dasbor jika sesi masih tersimpan -->
     <script>
+        let isAuthValid = false;
         if (localStorage.getItem('isLoggedIn') === 'true') {
-            window.location.replace('index.html');
+            try {
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                if (user && typeof user === 'object' && user.username) isAuthValid = true;
+            } catch (e) {}
         }
+        if (isAuthValid) {
+            window.location.replace('index.html');
+        } else {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('currentUser');
+        }
+        // Function to force clear session if user gets stuck
+        window.forceClearSession = function () {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('currentUser');
+            window.location.reload();
+        };
         window.getAppTitle = function () {
             try {
-                const settings = JSON.parse(localStorage.getItem('munaqosyahSettings'));
+                const settings = JSON.parse(localStorage.getItem('munaqosyahSettings')) || {};
                 const appName = (settings.appName || 'Aplikasi Munaqosyah').replace(/<br\s*\/?>/gi, ' ');
                 const schoolName = settings.schoolName || '';
                 return schoolName ? `${appName} - ${schoolName}` : appName;
             } catch (e) {
                 return 'Aplikasi Munaqosyah';
             }
-        }
-        document.write('<title>' + window.getAppTitle() + '</title>');
+        };
+        document.title = window.getAppTitle();
     </script>
 
     <link rel="stylesheet" href="style.css">
@@ -93,9 +109,9 @@
         }
     </script>
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" defer></script>
 
     <script src="login.js" defer></script>
 </head>
@@ -162,6 +178,9 @@
             </form>
             <p class="text-center text-sm text-gray-500 mt-6">Belum punya akun? <a href="#" id="show-register"
                     class="font-bold text-primary hover:underline">Daftar di sini</a></p>
+            <p class="text-center text-xs text-gray-400 mt-4">Mengalami masalah login? <a href="#"
+                    onclick="window.forceClearSession()" class="font-bold text-red-500 hover:underline">Hapus Sesi</a>
+            </p>
         </div>
 
         <!-- Register View -->

@@ -1,23 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Firebase Config ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyDxGG3pzQU_5IAhC-ozTnjayTdzVFaYZqY",
-        authDomain: "munaqosyah-sditalfityan.firebaseapp.com",
-        databaseURL: "https://munaqosyah-sditalfityan-default-rtdb.asia-southeast1.firebasedatabase.app/",
-        projectId: "munaqosyah-sditalfityan",
-        storageBucket: "munaqosyah-sditalfityan.firebasestorage.app",
-        messagingSenderId: "729297832237",
-        appId: "1:729297832237:web:0c992e31e330ab7813eba4"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
 
     // Function to load app settings (needed for registration token)
     function loadAppSettings() {
         const savedSettings = localStorage.getItem('munaqosyahSettings');
         let appSettings = { registrationToken: null, schoolName: '' }; // Default
-        if (savedSettings) {
+            if (savedSettings && savedSettings !== 'undefined') {
             try {
                 appSettings = JSON.parse(savedSettings);
             } catch (e) {
@@ -27,18 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return appSettings;
     }
 
-    // New function to load settings from Firebase
     function loadFirebaseSettings(callback) {
-        db.ref('appSettings').once('value', (snapshot) => {
-            let settings = { registrationToken: null, schoolName: '' };
-            if (snapshot.exists()) {
-                settings = snapshot.val();
-            }
-            callback(settings);
-        }).catch(error => {
-            console.error("Error loading settings from Firebase:", error);
-            callback({ registrationToken: null, schoolName: '' });
-        });
+        callback(loadAppSettings());
     }
 
     // --- Apply App Name and Logo on Login Page ---
@@ -142,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
             submitButton.disabled = true;
             submitButton.innerHTML = `<span class="loader"></span> Mengautentikasi...`;
 
+            let isSuccess = false;
             try {
                 // 3. Simulasi Panggilan API ke Backend
                 // Di aplikasi nyata, ganti ini dengan `fetch` ke endpoint login Anda
@@ -154,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.removeItem('currentStudentId');
                     localStorage.removeItem('currentKategori');
                     window.location.replace('index.html');
+                    isSuccess = true;
                 } else {
                     // 5. Login Gagal (Kredensial Salah)
                     // Error is shown inside fakeApiLogin now
@@ -168,8 +147,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 showError('Terjadi kesalahan pada server. Silakan coba lagi nanti.');
             } finally {
                 // 7. Kembalikan Tombol ke State Semula
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalButtonHTML;
+                if (!isSuccess) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonHTML;
+                }
             }
         });
     }
@@ -307,106 +288,54 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fakeApiLogin(username, password) {
         // Pengecekan khusus untuk Admin Utama yang di-hardcode
         if (username.toLowerCase() === 'jayyidin' && password === 'offthewallba123') {
-            try {
-                // Gunakan email yang telah ditentukan untuk admin utama
-                const adminEmail = "jayyidin.admin@munaqosyah.app";
-                await auth.signInWithEmailAndPassword(adminEmail, password);
-                return true; // Login admin berhasil
-            } catch (error) {
-                console.error("Firebase Admin Login Error:", error);
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
-                    showError('Akun Admin Utama belum diaktifkan. Silakan hubungi developer untuk setup awal.');
-                } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                    showError('Password Admin Utama yang Anda masukkan salah.');
+            const adminUser = { uid: 'admin-1', email: 'jayyidin@admin.com', name: 'Jayyidin', username: 'jayyidin', role: 'Admin Utama', profilePicUrl: null };
+            localStorage.setItem('currentUser', JSON.stringify(adminUser));
+            return true;
+        }
+
+        const localUsersStr = localStorage.getItem('localUsers');
+        if (localUsersStr) {
+            const localUsers = JSON.parse(localUsersStr);
+            const userKey = Object.keys(localUsers).find(k => localUsers[k].username === username.toLowerCase());
+            if (userKey) {
+                const user = localUsers[userKey];
+                if (user.password === password) {
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                    return true;
                 } else {
-                    showError('Terjadi kesalahan saat login sebagai admin.');
+                    showError('Password yang Anda masukkan salah.');
+                    return false;
                 }
-                return false;
             }
         }
-
-        // Alur login untuk pengguna biasa
-        try {
-            // Construct email directly from username to avoid permission_denied on unauthenticated DB reads
-            const email = `${username.toLowerCase()}@munaqosyah.app`;
-
-            // Sign in with the generated email and provided password
-            await auth.signInWithEmailAndPassword(email, password);
-            return true; // Success
-        } catch (error) {
-            console.error("Firebase Login Error:", error);
-            if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-                showError('Username atau Password yang Anda masukkan salah.');
-            } else {
-                showError('Terjadi kesalahan. Periksa koneksi internet Anda.');
-            }
-            return false;
-        }
+        
+        showError('Username atau Password yang Anda masukkan salah.');
+        return false;
     }
 
     async function fakeApiRegister(name, username, password) {
-        try {
             let finalUsername = username.toLowerCase();
-            let generatedEmail = `${finalUsername}@munaqosyah.app`;
-            let userCredential = null;
+            const localUsersStr = localStorage.getItem('localUsers');
+            let localUsers = localUsersStr ? JSON.parse(localUsersStr) : {};
+            
             let counter = 1;
-            let isUnique = false;
-
-            while (!isUnique) {
-                try {
-                    userCredential = await auth.createUserWithEmailAndPassword(generatedEmail, password);
-                    isUnique = true;
-                } catch (error) {
-                    if (error.code === 'auth/email-already-in-use') {
-                        finalUsername = `${username.toLowerCase()}${counter}`;
-                        generatedEmail = `${finalUsername}@munaqosyah.app`;
-                        counter++;
-                    } else {
-                        throw error;
-                    }
-                }
+            let checkUsername = finalUsername;
+            while (Object.keys(localUsers).some(k => localUsers[k].username === checkUsername)) {
+                checkUsername = `${finalUsername}${counter}`;
+                counter++;
             }
+            finalUsername = checkUsername;
 
-            const user = userCredential.user;
-
-            // Write user data to Realtime Database immediately after Auth registration
-            const updates = {};
-            updates[`/users/${user.uid}`] = {
+            const uid = 'user_' + new Date().getTime();
+            localUsers[uid] = {
+                uid: uid,
                 name,
                 username: finalUsername,
-                email: generatedEmail,
-                role: 'Guru Penguji'
+                password: password,
+                role: 'Guru Penguji',
+                profilePicUrl: null
             };
-            updates[`/usernames/${finalUsername}`] = user.uid; // Store username mapping
-
-            // Simpan asuransi data di localStorage sebelum mencoba ke DB
-            localStorage.setItem('munaqosyah_pending_user_' + user.uid, JSON.stringify({ name, username: finalUsername }));
-
-            try {
-                await db.ref().update(updates);
-                console.log("Data pengguna baru berhasil disimpan ke database.");
-            } catch (dbError) {
-                console.warn("DB rules memblokir penulisan, fallback akan menanganinya:", dbError);
-            }
-
-            // Pastikan user logout dari form registrasi agar benar-benar login dari awal
-            await auth.signOut();
-
-            /*
-            // Removed: Old logic to store info in localStorage
-            const newUserInfo = {
-                uid: user.uid,
-                name,
-                username: finalUsername,
-                email: generatedEmail,
-                role: 'Guru Penguji'
-            };
-            localStorage.setItem('newlyRegisteredUser', JSON.stringify(newUserInfo));
-            */
+            localStorage.setItem('localUsers', JSON.stringify(localUsers));
             return { success: true };
-        } catch (error) {
-            console.error("Firebase Register Error:", error);
-            throw new Error(error.message || 'Gagal mendaftar.');
-        }
     }
 });
