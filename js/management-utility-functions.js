@@ -852,6 +852,7 @@
                             const tokenDisplayContainer = document.getElementById('token-display-container');
                             const tokenDisplay = document.getElementById('token-display');
                             const noTokenMessage = document.getElementById('no-token-message');
+                            const btnShareToken = document.getElementById('btn-share-token');
                             
                             const token = (typeof appSettings !== 'undefined' && appSettings.registrationToken) ? appSettings.registrationToken : null;
                             
@@ -859,9 +860,11 @@
                                 if(tokenDisplay) tokenDisplay.value = token;
                                 if(tokenDisplayContainer) tokenDisplayContainer.classList.remove('hidden');
                                 if(noTokenMessage) noTokenMessage.classList.add('hidden');
+                                if(btnShareToken) btnShareToken.classList.remove('hidden');
                             } else {
                                 if(tokenDisplayContainer) tokenDisplayContainer.classList.add('hidden');
                                 if(noTokenMessage) noTokenMessage.classList.remove('hidden');
+                                if(btnShareToken) btnShareToken.classList.add('hidden');
                             }
                         }
 
@@ -911,43 +914,122 @@
                             openAlert("Token berhasil disalin ke papan klip!");
                         }
 
+                        window.shareLoginToken = function() {
+                            const token = (typeof appSettings !== 'undefined' && appSettings.registrationToken) ? appSettings.registrationToken : null;
+                            if (!token) return;
+                            
+                            let urlObj = new URL(window.location.href);
+                            let pathname = urlObj.pathname;
+                            
+                            if (pathname.endsWith('index.html')) {
+                                pathname = pathname.replace('index.html', 'login.html');
+                            } else if (!pathname.endsWith('/')) {
+                                pathname += '/login.html';
+                            } else {
+                                pathname += 'login.html';
+                            }
+                            urlObj.pathname = pathname;
+                            urlObj.search = '';
+                            urlObj.hash = '';
+                            
+                            const text = `*Pendaftaran Guru Penguji Munaqosyah*\n\nSilakan buka tautan berikut untuk masuk (login) atau membuat akun baru:\n${urlObj.toString()}\n\nGunakan Token Pendaftaran ini: *${token}*`;
+                            
+                            const tempInput = document.createElement('textarea');
+                            tempInput.value = text;
+                            document.body.appendChild(tempInput);
+                            tempInput.select();
+                            document.execCommand("copy");
+                            document.body.removeChild(tempInput);
+                            
+                            if (typeof openAlert === 'function') openAlert("Tautan Login beserta Token berhasil disalin! Silakan tempel (paste) di WhatsApp.");
+                            else alert("Tautan Login beserta Token berhasil disalin!");
+                        }
+
         // --- Fitur Ganti Foto Profil ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const initProfilePic = () => {
-                if (typeof currentUser !== 'undefined' && currentUser && currentUser.profilePicUrl) {
-                    const avatarEls = document.querySelectorAll('#user-avatar-header, #user-avatar-laporan, #user-avatar-pengaturan');
-                    avatarEls.forEach(el => {
-                        if (el) el.src = currentUser.profilePicUrl;
-                    });
+        window.updateSemuaFotoProfil = function(url) {
+            if (!url) return;
+            const avatarEls = document.querySelectorAll('#user-avatar-header, #user-avatar-laporan, #user-avatar-pengaturan, #user-avatar-peserta, #user-avatar-ujian, #user-avatar-penilaian');
+            avatarEls.forEach(el => {
+                if (el) el.src = url;
+            });
+        };
+
+        window.initFotoProfil = function() {
+            if (typeof currentUser !== 'undefined' && currentUser) {
+                const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name || currentUser.username || 'U')}&background=cfe6f2&color=071e27`;
+                window.updateSemuaFotoProfil(currentUser.profilePicUrl || fallbackUrl);
+            }
+        };
+
+        window.triggerGantiFotoProfil = function(e) {
+            if (e) e.preventDefault();
+            const inputProfilePic = document.getElementById('input-profile-pic');
+            if (inputProfilePic) inputProfilePic.click();
+        };
+
+        window.hapusFotoProfil = async function(e) {
+            if (e) e.preventDefault();
+            const proceed = async () => {
+                try {
+                    const loadingOverlay = document.getElementById('loading-overlay');
+                    if (loadingOverlay) loadingOverlay.classList.remove('opacity-0', 'pointer-events-none');
+
+                    if (typeof currentUser !== 'undefined' && currentUser) {
+                        const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name || currentUser.username || 'U')}&background=cfe6f2&color=071e27`;
+                        window.updateSemuaFotoProfil(fallbackUrl);
+
+                        delete currentUser.profilePicUrl;
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                        if (typeof db !== 'undefined' && currentUser.uid) {
+                            await db.collection('users').doc(currentUser.uid).set({ 
+                                profilePicUrl: firebase.firestore.FieldValue.delete() 
+                            }, { merge: true });
+                            
+                            const localStr = localStorage.getItem('localUsers');
+                            if (localStr) {
+                                const localUsers = JSON.parse(localStr);
+                                if (localUsers[currentUser.uid]) {
+                                    delete localUsers[currentUser.uid].profilePicUrl;
+                                    localStorage.setItem('localUsers', JSON.stringify(localUsers));
+                                }
+                            }
+                            
+                            if (typeof openAlert === 'function') openAlert("Foto profil berhasil dihapus!");
+                            else alert("Foto profil berhasil dihapus!");
+                            
+                            if (typeof renderGuruPengujiDashboard === 'function') renderGuruPengujiDashboard();
+                        }
+                    }
+                } catch (err) {
+                    console.error("Gagal menghapus foto profil:", err);
+                    if (typeof openAlert === 'function') openAlert("Gagal menghapus foto profil.");
+                    else alert("Gagal menghapus foto profil.");
+                } finally {
+                    const loadingOverlay = document.getElementById('loading-overlay');
+                    if (loadingOverlay) loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
                 }
             };
-            setTimeout(initProfilePic, 500); // Eksekusi dengan jeda untuk memastikan data currentUser dimuat
 
-            const inputProfilePic = document.getElementById('input-profile-pic');
-            const triggerBtns = [
-                document.getElementById('btn-change-profile-pic'),
-                document.getElementById('btn-change-profile-pic-laporan'),
-                document.getElementById('btn-change-profile-pic-pengaturan')
-            ];
+            if (typeof openConfirm === 'function') openConfirm("Apakah Anda yakin ingin menghapus foto profil kembali ke default?", (yes) => { if (yes) proceed(); });
+            else if (confirm("Apakah Anda yakin ingin menghapus foto profil kembali ke default?")) proceed();
+        };
 
-            triggerBtns.forEach(btn => {
-                if (btn) {
-                    btn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        if (inputProfilePic) inputProfilePic.click();
-                    });
-                }
-            });
+        window.prosesGantiFotoProfil = async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                if (typeof openAlert === 'function') openAlert("Harap pilih file gambar yang valid.");
+                else alert("Harap pilih file gambar yang valid.");
+                return;
+            }
 
-            if (inputProfilePic) {
-                inputProfilePic.addEventListener('change', (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    if (!file.type.startsWith('image/')) {
-                        if (typeof openAlert === 'function') openAlert("Harap pilih file gambar yang valid.");
-                        return;
-                    }
+            try {
+                // Tampilkan indikator loading jika ada
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) loadingOverlay.classList.remove('opacity-0', 'pointer-events-none');
 
+                const dataUrl = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         const img = new Image();
@@ -956,41 +1038,109 @@
                             const MAX_SIZE = 256;
                             let width = img.width, height = img.height;
 
-                            if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } 
-                            else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
+                            if (width > height) { 
+                                if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } 
+                            } else { 
+                                if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } 
+                            }
 
                             canvas.width = width; canvas.height = height;
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, width, height);
-                            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-
-                            document.querySelectorAll('#user-avatar-header, #user-avatar-laporan, #user-avatar-pengaturan').forEach(el => { if (el) el.src = dataUrl; });
-
-                            if (typeof currentUser !== 'undefined' && currentUser) {
-                                currentUser.profilePicUrl = dataUrl;
-                                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-                                if (typeof db !== 'undefined' && currentUser.uid) {
-                                    db.collection('users').doc(currentUser.uid).set({ profilePicUrl: dataUrl }, { merge: true }).then(() => {
-                                        const localStr = localStorage.getItem('localUsers');
-                                        if (localStr) {
-                                            const localUsers = JSON.parse(localStr);
-                                            if (localUsers[currentUser.uid]) {
-                                                localUsers[currentUser.uid].profilePicUrl = dataUrl;
-                                                localStorage.setItem('localUsers', JSON.stringify(localUsers));
-                                            }
-                                        }
-                                        if (typeof openAlert === 'function') openAlert("Foto profil berhasil diperbarui!");
-                                    }).catch(err => {
-                                        console.error("Gagal update foto DB:", err);
-                                        if (typeof openAlert === 'function') openAlert("Foto diperbarui secara lokal, namun gagal sinkronisasi ke server.");
-                                    });
-                                }
-                            }
+                            resolve(canvas.toDataURL('image/jpeg', 0.8));
                         };
+                        img.onerror = reject;
                         img.src = event.target.result;
                     };
+                    reader.onerror = reject;
                     reader.readAsDataURL(file);
                 });
+
+                // Langsung perbarui UI untuk UX yang responsif
+                window.updateSemuaFotoProfil(dataUrl);
+
+                if (typeof currentUser !== 'undefined' && currentUser) {
+                    currentUser.profilePicUrl = dataUrl;
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                    if (typeof db !== 'undefined' && currentUser.uid) {
+                        await db.collection('users').doc(currentUser.uid).set({ profilePicUrl: dataUrl }, { merge: true });
+                        
+                        const localStr = localStorage.getItem('localUsers');
+                        if (localStr) {
+                            const localUsers = JSON.parse(localStr);
+                            if (localUsers[currentUser.uid]) {
+                                localUsers[currentUser.uid].profilePicUrl = dataUrl;
+                                localStorage.setItem('localUsers', JSON.stringify(localUsers));
+                            }
+                        }
+                        
+                        if (typeof openAlert === 'function') openAlert("Foto profil berhasil diperbarui!");
+                        else alert("Foto profil berhasil diperbarui!");
+                        
+                        // Segarkan list guru penguji di dasbor
+                        if (typeof renderGuruPengujiDashboard === 'function') {
+                            renderGuruPengujiDashboard();
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Gagal memproses/menyimpan foto profil:", err);
+                if (typeof openAlert === 'function') openAlert("Gagal memproses atau menyimpan foto profil.");
+                else alert("Gagal memproses atau menyimpan foto profil.");
+            } finally {
+                e.target.value = ''; // Reset input form agar bisa upload file yg sama lagi jika perlu
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) loadingOverlay.classList.add('opacity-0', 'pointer-events-none');
             }
+        };
+
+        // --- Fitur Toggle Dropdown Profil ---
+        window.toggleProfileDropdown = function(btn) {
+            const menu = btn.nextElementSibling;
+            const isHidden = menu ? menu.classList.contains('hidden') : false;
+            
+            // Sembunyikan semua menu dropdown profil yang mungkin sedang terbuka di halaman
+            document.querySelectorAll('.profile-dropdown-menu').forEach(m => m.classList.add('hidden'));
+            
+            // Jika menu yang diklik sebelumnya tersembunyi, maka tampilkan
+            if (isHidden && menu) {
+                menu.classList.remove('hidden');
+            }
+        };
+
+        // Tutup dropdown secara otomatis jika mengklik di luar area ATAU setelah memilih salah satu tombol menu
+        document.addEventListener('click', function(e) {
+            const isOutside = !e.target.closest('.profile-dropdown-container');
+            const isMenuAction = e.target.closest('.profile-dropdown-menu button');
+            
+            if (isOutside || isMenuAction) {
+                document.querySelectorAll('.profile-dropdown-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(window.initFotoProfil, 500); // Tunggu currentUser siap
+
+            const inputProfilePic = document.getElementById('input-profile-pic');
+            if (inputProfilePic) {
+                inputProfilePic.addEventListener('change', window.prosesGantiFotoProfil);
+            }
+
+            const triggerBtns = [
+                document.getElementById('btn-change-profile-pic'),
+                document.getElementById('btn-change-profile-pic-laporan'),
+                document.getElementById('btn-change-profile-pic-pengaturan'),
+                document.getElementById('btn-change-profile-pic-peserta'),
+                document.getElementById('btn-change-profile-pic-ujian'),
+                document.getElementById('btn-change-profile-pic-penilaian')
+            ];
+
+            triggerBtns.forEach(btn => {
+                if (btn) {
+                    btn.addEventListener('click', window.triggerGantiFotoProfil);
+                }
+            });
         });

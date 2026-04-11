@@ -59,94 +59,6 @@
             }
             #view-laporan header, #view-laporan .filter-actions, #view-laporan #pagination-laporan, #mobile-bottom-nav { display: none !important; }
         }
-
-        /* --- DARK MODE OVERRIDES --- */
-        html.dark {
-            color-scheme: dark;
-        }
-        html.dark body, html.dark .bg-\[\#fafafa\], html.dark .bg-surface {
-            background-color: #0f172a !important; /* Slate 900 */
-            color: #f8fafc !important; /* Slate 50 */
-        }
-        html.dark .bg-white {
-            background-color: #1e293b !important; /* Slate 800 */
-        }
-        html.dark .bg-gray-50, html.dark .bg-gray-100 {
-            background-color: #0f172a !important;
-        }
-        html.dark .bg-gray-200 {
-            background-color: #334155 !important; /* Slate 700 */
-        }
-        
-        /* Typography */
-        html.dark .text-teal-950, html.dark .text-gray-900, html.dark .text-gray-800, html.dark .text-gray-700 {
-            color: #f1f5f9 !important; /* Slate 100 */
-        }
-        html.dark .text-gray-600, html.dark .text-gray-500 {
-            color: #94a3b8 !important; /* Slate 400 */
-        }
-        html.dark .text-gray-400 {
-            color: #64748b !important; /* Slate 500 */
-        }
-        html.dark .text-primary { color: #5eead4 !important; }
-        html.dark .text-teal-700 { color: #5eead4 !important; }
-        html.dark .text-emerald-700, html.dark .text-emerald-600 { color: #6ee7b7 !important; }
-        html.dark .text-blue-700, html.dark .text-blue-600 { color: #93c5fd !important; }
-        html.dark .text-indigo-700, html.dark .text-indigo-600 { color: #a5b4fc !important; }
-        html.dark .text-purple-700, html.dark .text-purple-600 { color: #c4b5fd !important; }
-        html.dark .text-amber-700, html.dark .text-amber-600, html.dark .text-amber-500 { color: #fcd34d !important; }
-        html.dark .text-orange-700, html.dark .text-orange-600 { color: #fdba74 !important; }
-        html.dark .text-red-700, html.dark .text-red-600, html.dark .text-red-500 { color: #fca5a5 !important; }
-        
-        /* Borders & Backgrounds with Opacity */
-        html.dark .border-gray-100, html.dark .border-gray-200, html.dark .border-outline-variant\/10 {
-            border-color: #334155 !important;
-        }
-        html.dark .bg-white\/80, html.dark .bg-white\/90 { background-color: rgba(30, 41, 59, 0.8) !important; }
-        html.dark .bg-gray-50\/80, html.dark .bg-gray-50\/50, html.dark .bg-gray-50\/30 { background-color: rgba(15, 23, 42, 0.8) !important; }
-        
-        html.dark .bg-teal-50, html.dark .bg-emerald-50, html.dark .bg-blue-50, html.dark .bg-indigo-50, html.dark .bg-purple-50, html.dark .bg-amber-50, html.dark .bg-orange-50, html.dark .bg-red-50 {
-            background-color: rgba(30, 41, 59, 0.6) !important;
-            border-color: #334155 !important;
-        }
-        
-        /* Alerts & Semantic Backgrounds */
-        html.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.15) !important; }
-        html.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.15) !important; }
-        html.dark .border-red-100 { border-color: rgba(239, 68, 68, 0.3) !important; }
-        
-        /* Primary Buttons & Accents */
-        html.dark .bg-primary { background-color: #0d9488 !important; color: #ffffff !important; }
-        html.dark .hover\:bg-teal-900:hover { background-color: #0f766e !important; }
-        html.dark .bg-primary\/5 { background-color: rgba(45, 212, 191, 0.05) !important; }
-        html.dark .bg-primary\/10 { background-color: rgba(45, 212, 191, 0.1) !important; }
-        html.dark .bg-primary\/20 { background-color: rgba(45, 212, 191, 0.2) !important; }
-
-        /* Forms */
-        html.dark input:not([type="checkbox"]):not([type="radio"]), html.dark select, html.dark textarea {
-            background-color: #0f172a !important;
-            color: #f8fafc !important;
-            border-color: #334155 !important;
-        }
-        html.dark input:not([type="checkbox"]):not([type="radio"]):focus, html.dark select:focus, html.dark textarea:focus {
-            border-color: #0d9488 !important;
-            box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2) !important;
-        }
-        html.dark input::placeholder, html.dark textarea::placeholder { color: #94a3b8 !important; opacity: 1 !important; }
-        
-        /* Shadows & Layouts */
-        html.dark .shadow-sm, html.dark .shadow-md, html.dark .shadow-lg, html.dark .shadow-xl {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3) !important;
-        }
-        html.dark .shadow-2xl {
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
-        }
-        html.dark aside#sidebar, html.dark nav#mobile-bottom-nav {
-            background-color: rgba(30, 41, 59, 0.95) !important;
-            border-color: #334155 !important;
-        }
-        html.dark .hover\:bg-gray-50:hover, html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
-        html.dark #loading-overlay { background-color: #0f172a !important; }
     </style>
 
     <link rel="stylesheet" href="style.css">
@@ -334,9 +246,9 @@
         <!-- Navigation -->
         <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 hide-scrollbar">
             <p class="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 sidebar-text">Menu Utama</p>
-            <a id="nav-dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-primary text-white shadow-md shadow-primary/20 transition-all duration-200 active:scale-95 group relative" href="#" onclick="event.preventDefault(); switchView('dashboard'); if(window.innerWidth < 768) toggleSidebar();">
+            <a id="nav-dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-teal-950 transition-all duration-200 active:scale-95 active:bg-gray-200 group relative" href="#" onclick="event.preventDefault(); switchView('dashboard'); if(window.innerWidth < 768) toggleSidebar();">
                 <span class="material-symbols-outlined text-[22px]" data-icon="dashboard">dashboard</span>
-                <span class="font-headline text-sm font-bold sidebar-text truncate">Dasbor</span>
+                <span class="font-headline text-sm font-semibold sidebar-text truncate">Dasbor</span>
             </a>
             <a id="nav-peserta" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-100 hover:text-teal-950 transition-all duration-200 active:scale-95 active:bg-gray-200 group" href="#" onclick="event.preventDefault(); switchView('peserta'); if(window.innerWidth < 768) toggleSidebar();">
                 <span class="material-symbols-outlined text-[22px] group-hover:scale-110 transition-transform" data-icon="group">group</span>
@@ -374,7 +286,7 @@
     </aside>
 
     <!-- View: DASHBOARD (BARU) -->
-    <div id="view-dashboard" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] pb-[72px] md:pb-0">
+    <div id="view-dashboard" class="flex-1 flex flex-col h-full overflow-hidden bg-[#fafafa] pb-[72px] md:pb-0 hidden">
         <header
             class="w-full flex justify-between items-center px-4 md:px-8 py-3 md:py-4 bg-white/80 backdrop-blur-md z-30 border-b border-outline-variant/10 shrink-0">
             <div class="flex items-center gap-2 md:gap-4">
@@ -399,8 +311,8 @@
                         class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm">expand_more</span>
                 </div>
                 <div class="h-6 w-[1px] bg-outline-variant/30 hidden md:block"></div>
-                <div class="relative group">
-                    <div class="flex items-center gap-3 cursor-pointer">
+                <div class="relative profile-dropdown-container">
+                    <div class="flex items-center gap-3 cursor-pointer" onclick="toggleProfileDropdown(this)">
                         <div class="text-right hidden sm:block">
                             <p id="user-name-header"
                                 class="text-teal-950 font-bold leading-tight text-sm truncate max-w-[150px]"></p>
@@ -412,11 +324,15 @@
                     </div>
                     <!-- Dropdown Menu -->
                     <div
-                        class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden group-hover:block">
+                        class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden profile-dropdown-menu">
                         <button id="btn-change-profile-pic"
                             class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-lg font-medium flex items-center gap-2">
                             <span class="material-symbols-outlined text-base">image</span>
                             Ubah Foto Profil
+                        </button>
+                        <button onclick="window.hapusFotoProfil()" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg font-medium flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">delete</span>
+                            Hapus Foto
                         </button>
                         <div class="h-px bg-gray-100 my-1"></div>
                         <button onclick="handleLogout()"
@@ -607,6 +523,29 @@
                         <span class="material-symbols-outlined dark-icon">dark_mode</span>
                         <span class="material-symbols-outlined light-icon hidden">light_mode</span>
                     </button>
+                    <div class="relative hidden sm:block profile-dropdown-container">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="toggleProfileDropdown(this)">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-md">
+                                <img id="user-avatar-peserta" alt="Profil" class="w-full h-full object-cover" src="" />
+                            </div>
+                        </div>
+                        <!-- Dropdown Menu -->
+                        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden profile-dropdown-menu">
+                            <button id="btn-change-profile-pic-peserta" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">image</span>
+                                Ubah Foto Profil
+                            </button>
+                            <button onclick="window.hapusFotoProfil()" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">delete</span>
+                                Hapus Foto
+                            </button>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <button onclick="handleLogout()" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">logout</span>
+                                Keluar Akun
+                            </button>
+                        </div>
+                    </div>
                     <button id="btn-buka-modal-tambah-peserta" onclick="bukaModalTambahPeserta()" class="bg-primary text-white p-2 md:px-5 md:py-2.5 rounded-lg md:rounded-xl font-headline font-bold text-sm flex items-center gap-2 hover:bg-teal-900 active:scale-95 transition-all shadow-sm">
                         <span class="material-symbols-outlined text-sm md:text-base font-bold" data-icon="add">add</span>
                         <span class="hidden md:inline">Tambah Peserta</span>
@@ -772,6 +711,29 @@
                     <div class="hidden md:flex items-center gap-2 text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-100" id="display-tanggal-ujian">
                         <!-- Diisi oleh JS -->
                     </div>
+                    <div class="relative hidden sm:block profile-dropdown-container">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="toggleProfileDropdown(this)">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-md">
+                                <img id="user-avatar-ujian" alt="Profil" class="w-full h-full object-cover" src="" />
+                            </div>
+                        </div>
+                        <!-- Dropdown Menu -->
+                        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden profile-dropdown-menu">
+                            <button id="btn-change-profile-pic-ujian" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">image</span>
+                                Ubah Foto Profil
+                            </button>
+                            <button onclick="window.hapusFotoProfil()" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">delete</span>
+                                Hapus Foto
+                            </button>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <button onclick="handleLogout()" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">logout</span>
+                                Keluar Akun
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </header>
 
@@ -843,10 +805,35 @@
                         Siswa
                     </h1>
                 </div>
-                <button class="theme-toggle p-2 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors" title="Mode Gelap">
-                    <span class="material-symbols-outlined dark-icon">dark_mode</span>
-                    <span class="material-symbols-outlined light-icon hidden">light_mode</span>
-                </button>
+                <div class="flex items-center gap-3">
+                    <button class="theme-toggle p-2 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors" title="Mode Gelap">
+                        <span class="material-symbols-outlined dark-icon">dark_mode</span>
+                        <span class="material-symbols-outlined light-icon hidden">light_mode</span>
+                    </button>
+                    <div class="relative hidden sm:block profile-dropdown-container">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="toggleProfileDropdown(this)">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-md">
+                                <img id="user-avatar-penilaian" alt="Profil" class="w-full h-full object-cover" src="" />
+                            </div>
+                        </div>
+                        <!-- Dropdown Menu -->
+                        <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden profile-dropdown-menu">
+                            <button id="btn-change-profile-pic-penilaian" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">image</span>
+                                Ubah Foto Profil
+                            </button>
+                            <button onclick="window.hapusFotoProfil()" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">delete</span>
+                                Hapus Foto
+                            </button>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <button onclick="handleLogout()" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">logout</span>
+                                Keluar Akun
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </header>
 
             <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 md:pb-4 w-full">
@@ -901,8 +888,8 @@
                         <span class="material-symbols-outlined dark-icon">dark_mode</span>
                         <span class="material-symbols-outlined light-icon hidden">light_mode</span>
                     </button>
-                    <div class="relative group">
-                        <div class="flex items-center gap-3 cursor-pointer">
+                    <div class="relative profile-dropdown-container">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="toggleProfileDropdown(this)">
                             <div
                                 class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-md">
                                 <img id="user-avatar-laporan" alt="Profil" class="w-full h-full object-cover" src="" />
@@ -910,11 +897,20 @@
                         </div>
                         <!-- Dropdown Menu -->
                         <div
-                            class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden group-hover:block">
+                            class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden profile-dropdown-menu">
                             <button id="btn-change-profile-pic-laporan"
                                 class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-lg font-medium flex items-center gap-2">
                                 <span class="material-symbols-outlined text-base">image</span>
                                 Ubah Foto Profil
+                            </button>
+                            <button onclick="window.hapusFotoProfil()" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">delete</span>
+                                Hapus Foto
+                            </button>
+                            <div class="h-px bg-gray-100 my-1"></div>
+                            <button onclick="handleLogout()" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-bold flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">logout</span>
+                                Keluar Akun
                             </button>
                         </div>
                     </div>
@@ -1155,19 +1151,23 @@
                         <span class="material-symbols-outlined dark-icon">dark_mode</span>
                         <span class="material-symbols-outlined light-icon hidden">light_mode</span>
                     </button>
-                    <div class="relative group">
-                        <div class="flex items-center gap-3 cursor-pointer">
+                    <div class="relative profile-dropdown-container">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="toggleProfileDropdown(this)">
                             <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-md">
                                 <img id="user-avatar-pengaturan" alt="Profil" class="w-full h-full object-cover" src="" />
                             </div>
                         </div>
                         <!-- Dropdown Menu -->
                         <div
-                            class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden group-hover:block">
+                            class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 p-2 z-50 hidden profile-dropdown-menu">
                             <button id="btn-change-profile-pic-pengaturan"
                                 class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary rounded-lg font-medium flex items-center gap-2">
                                 <span class="material-symbols-outlined text-base">image</span>
                                 Ubah Foto Profil
+                            </button>
+                            <button onclick="window.hapusFotoProfil()" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-red-500 rounded-lg font-medium flex items-center gap-2">
+                                <span class="material-symbols-outlined text-base">delete</span>
+                                Hapus Foto
                             </button>
                             <div class="h-px bg-gray-100 my-1"></div>
                             <button onclick="handleLogout()"
@@ -1891,6 +1891,10 @@
                             class="flex-1 px-4 py-2.5 bg-primary text-white font-bold rounded-xl text-xs hover:bg-teal-900 transition-colors active:scale-95">
                             Buat Token Baru
                         </button>
+                        <button id="btn-share-token" onclick="shareLoginToken()"
+                            class="hidden flex-1 px-4 py-2.5 bg-emerald-500 text-white font-bold rounded-xl text-xs hover:bg-emerald-600 transition-colors active:scale-95">
+                            Salin URL & Token
+                        </button>
                         <button id="btn-clear-token" onclick="clearToken()"
                             class="flex-1 px-4 py-2.5 bg-red-500 text-white font-bold rounded-xl text-xs hover:bg-red-600 transition-colors active:scale-95">
                             Hapus Token
@@ -1988,7 +1992,17 @@
                                 class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none"
                                 disabled>
                         </div>
-                        <!-- Password fields are removed as they cannot be changed by admin on client-side -->
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold text-teal-950">Password Baru (Opsional)</label>
+                        <div class="relative">
+                            <input type="password" id="input-akun-password" placeholder="Kosongkan jika tidak diubah"
+                                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-primary/20 outline-none">
+                            <button type="button" onclick="const input = document.getElementById('input-akun-password'); const type = input.getAttribute('type') === 'password' ? 'text' : 'password'; input.setAttribute('type', type); this.querySelector('span').textContent = type === 'password' ? 'visibility' : 'visibility_off';" class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-base">visibility</span>
+                            </button>
+                        </div>
+                        <p class="text-[9px] text-gray-500 mt-0.5">Isi untuk mereset kata sandi penguji (Minimal 6 karakter).</p>
+                    </div>
                         <div id="container-btn-akun" class="flex justify-end gap-2 pt-2">
                             <button onclick="resetFormAkun()"
                                 class="px-4 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl text-xs hover:bg-gray-200 transition-colors active:scale-95">Batal</button>
@@ -2696,10 +2710,9 @@
             class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 flex justify-around items-center px-2 pt-2 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] z-40"
             style="padding-bottom: env(safe-area-inset-bottom);">
             <a href="#" onclick="event.preventDefault(); switchView('dashboard')" id="mobile-nav-dashboard"
-                class="flex flex-col items-center p-2 text-primary transition-all duration-200 min-w-[60px] scale-110 active:scale-100">
-                <span class="material-symbols-outlined text-2xl mb-0.5 transition-all"
-                    style="font-variation-settings: 'FILL' 1, 'wght' 600">dashboard</span>
-                <span class="text-[10px] font-bold">Dasbor</span>
+                class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all duration-200 min-w-[60px] active:scale-90 active:opacity-70">
+                <span class="material-symbols-outlined text-2xl mb-0.5 transition-all">dashboard</span>
+                <span class="text-[10px] font-semibold">Dasbor</span>
             </a>
             <a href="#" onclick="event.preventDefault(); switchView('peserta')" id="mobile-nav-peserta"
                 class="flex flex-col items-center p-2 text-gray-400 hover:text-teal-700 transition-all duration-200 min-w-[60px] active:scale-90 active:opacity-70">

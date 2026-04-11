@@ -36,20 +36,11 @@
             const container = document.getElementById('display-tanggal-ujian');
             if (!container) return;
 
-            if (currentUser.role === 'Guru Penguji') {
-                if (typeof appSettings !== 'undefined' && appSettings.examDates && appSettings.examDates.length > 0) {
-                    const formattedDates = appSettings.examDates.map(d => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })).join(', ');
-                    container.innerHTML = `<div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0"><span class="material-symbols-outlined text-xl">event_available</span></div><div class="flex flex-col"><span class="text-[10px] text-teal-100/70 font-semibold uppercase tracking-wider">Jadwal Penilaian</span><span class="text-white text-sm leading-tight">${formattedDates}</span></div>`;
-                    container.classList.remove('hidden');
-                    container.classList.add('flex');
-                } else {
-                    container.innerHTML = `<div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-200 shrink-0"><span class="material-symbols-outlined text-xl">event_busy</span></div><div class="flex flex-col"><span class="text-[10px] text-red-200/70 font-semibold uppercase tracking-wider">Status Jadwal</span><span class="text-red-100 text-sm leading-tight">Belum Diatur</span></div>`;
-                    container.classList.remove('hidden');
-                    container.classList.add('flex');
-                }
+            if (typeof appSettings !== 'undefined' && appSettings.examDates && appSettings.examDates.length > 0) {
+                const formattedDates = appSettings.examDates.map(d => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })).join(', ');
+                container.innerHTML = `<span class="material-symbols-outlined text-[18px]">calendar_month</span><span>${formattedDates}</span>`;
             } else {
-                container.classList.add('hidden');
-                container.classList.remove('flex');
+                container.innerHTML = `<span class="material-symbols-outlined text-[18px] text-red-500">event_busy</span><span class="text-red-500">Belum Diatur</span>`;
             }
 
             // Tampilkan tombol Nilai Massal khusus Admin Utama
@@ -184,7 +175,7 @@
                         <span class="material-symbols-outlined text-5xl relative z-10">person_search</span>
                     </div>
                     <h3 class="text-xl font-extrabold text-teal-950 mb-2 font-headline">Peserta Tidak Ditemukan</h3>
-                    <p class="text-sm text-gray-500 max-w-sm">Tidak ada santri yang cocok dengan pencarian atau filter kategori Anda. Coba ubah kata kunci atau kategori.</p>
+                    <p class="text-sm text-gray-500 max-w-sm">Tidak ada siswa yang cocok dengan pencarian atau filter kategori Anda. Coba ubah kata kunci atau kategori.</p>
                 </div>`;
             } else {
                 paginatedList.forEach(p => {
@@ -445,7 +436,6 @@
                             <span class="material-symbols-outlined">${icon}</span>
                         </div>
                         <div>
-                            <h4 class="font-bold text-teal-950 text-base group-hover:text-primary transition-colors">${item.nama}</h4>
                             <div class="flex items-center gap-2">
                                 <h4 class="font-bold text-teal-950 text-base group-hover:text-primary transition-colors">${item.nama}</h4>
                                 ${isRecentlyUpdated ? '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-100 text-amber-700 border border-amber-200">Baru Diubah</span>' : ''}

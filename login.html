@@ -45,6 +45,47 @@
         document.title = window.getAppTitle();
     </script>
 
+    <script>
+        // Dark Mode Anti-FOUC & Logic
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                const darkIcon = btn.querySelector('.dark-icon');
+                const lightIcon = btn.querySelector('.light-icon');
+                if (isDark) {
+                    if (darkIcon) darkIcon.classList.add('hidden');
+                    if (lightIcon) lightIcon.classList.remove('hidden');
+                } else {
+                    if (darkIcon) darkIcon.classList.remove('hidden');
+                    if (lightIcon) lightIcon.classList.add('hidden');
+                }
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                const darkIcon = btn.querySelector('.dark-icon');
+                const lightIcon = btn.querySelector('.light-icon');
+                if (isDark) {
+                    if (darkIcon) darkIcon.classList.add('hidden');
+                    if (lightIcon) lightIcon.classList.remove('hidden');
+                } else {
+                    if (darkIcon) darkIcon.classList.remove('hidden');
+                    if (lightIcon) lightIcon.classList.add('hidden');
+                }
+                btn.addEventListener('click', toggleDarkMode);
+            });
+        });
+    </script>
+
     <link rel="stylesheet" href="style.css">
     <script id="tailwind-config">
         tailwind.config = {
@@ -111,12 +152,19 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js" defer></script>
+    <script src="js/firebase-config.js" defer></script>
 
     <script src="login.js" defer></script>
 </head>
 
 <body class="bg-surface flex items-center justify-center min-h-screen p-4">
+
+    <!-- Tombol Toggle Dark Mode -->
+    <button class="theme-toggle fixed top-4 right-4 md:top-8 md:right-8 p-3 text-gray-500 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors z-50 shadow-sm bg-white border border-gray-200" title="Mode Gelap">
+        <span class="material-symbols-outlined dark-icon">dark_mode</span>
+        <span class="material-symbols-outlined light-icon hidden">light_mode</span>
+    </button>
 
     <div class="w-full max-w-md">
         <div class="text-center mb-8">
@@ -146,7 +194,7 @@
                     <label class="text-[10px] font-bold text-teal-950">Kata Sandi</label>
                     <div class="relative">
                         <input type="password" id="password"
-                            class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                            class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 pr-12 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                             placeholder="••••••••">
                         <button id="toggle-password" type="button"
                             class="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-primary">
@@ -201,15 +249,25 @@
                 </div>
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-teal-950">Kata Sandi</label>
-                    <input type="password" id="register-password"
-                        class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                        placeholder="Minimal 6 karakter">
+                    <div class="relative">
+                        <input type="password" id="register-password"
+                            class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 pr-12 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                            placeholder="Minimal 6 karakter">
+                        <button type="button" class="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-primary toggle-password-btn" data-target="register-password">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-teal-950">Konfirmasi Kata Sandi</label>
-                    <input type="password" id="register-password-confirm"
-                        class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                        placeholder="Ulangi kata sandi">
+                    <div class="relative">
+                        <input type="password" id="register-password-confirm"
+                            class="w-full h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 pr-12 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                            placeholder="Ulangi kata sandi">
+                        <button type="button" class="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-primary toggle-password-btn" data-target="register-password-confirm">
+                            <span class="material-symbols-outlined text-lg">visibility</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-teal-950">Token Pendaftaran</label>

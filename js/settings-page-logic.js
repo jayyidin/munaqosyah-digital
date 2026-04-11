@@ -454,3 +454,56 @@
                                 if (typeof openAlert === 'function') openAlert("Gagal menyimpan kategori: " + e.message);
                             }
                         };
+
+                        // --- Logika Kelola Akun Penguji (Reset Password) ---
+                        const originalResetFormAkun = window.resetFormAkun;
+                        window.resetFormAkun = function() {
+                            if (typeof originalResetFormAkun === 'function') originalResetFormAkun();
+                            const pwdInput = document.getElementById('input-akun-password');
+                            if (pwdInput) pwdInput.value = '';
+                        };
+
+                        window.simpanAkunPenguji = async function() {
+                            const username = document.getElementById('input-akun-username-original').value;
+                            const newNama = document.getElementById('input-akun-nama').value.trim();
+                            const pwdInput = document.getElementById('input-akun-password');
+                            const newPassword = pwdInput ? pwdInput.value : '';
+
+                            if (!newNama) {
+                                if (typeof openAlert === 'function') openAlert("Nama lengkap tidak boleh kosong.");
+                                return;
+                            }
+                            if (newPassword && newPassword.length < 6) {
+                                if (typeof openAlert === 'function') openAlert("Password baru minimal harus 6 karakter.");
+                                return;
+                            }
+
+                            const localUsersStr = localStorage.getItem('localUsers');
+                            if (!localUsersStr) return;
+                            const localUsers = JSON.parse(localUsersStr);
+
+                            const uid = Object.keys(localUsers).find(k => localUsers[k].username === username);
+                            if (!uid) return;
+
+                            localUsers[uid].name = newNama;
+                            if (newPassword) {
+                                localUsers[uid].password = newPassword;
+                            }
+
+                            try {
+                                if (typeof db !== 'undefined') {
+                                    const updates = { name: newNama };
+                                    if (newPassword) updates.password = newPassword;
+                                    await db.collection('users').doc(uid).set(updates, { merge: true });
+                                }
+                                localStorage.setItem('localUsers', JSON.stringify(localUsers));
+                                
+                                if (typeof window.bukaModalAkunPenguji === 'function') window.bukaModalAkunPenguji(); // Segarkan list
+                                if (typeof renderGuruPengujiDashboard === 'function') renderGuruPengujiDashboard();
+                                
+                                window.resetFormAkun();
+                                if (typeof openAlert === 'function') openAlert("Akun penguji berhasil diperbarui.");
+                            } catch (err) {
+                                if (typeof openAlert === 'function') openAlert("Gagal memperbarui akun: " + err.message);
+                            }
+                        };

@@ -108,9 +108,6 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
     }
 
     if (!forceRender && getCurrentVisibleView() === viewName) return;
-    const loader = document.getElementById('loading-overlay');
-    loader.classList.remove('opacity-0', 'pointer-events-none');
-    loader.classList.add('opacity-100');
 
     // Tutup menu sidebar saat berpindah tampilan jika sedang di mode ponsel
     if (window.innerWidth < 768) {
@@ -122,6 +119,7 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
         }
     }
 
+    // Gunakan jeda sangat singkat agar animasi tombol selesai dan transisi mulus tanpa layar loading
     setTimeout(() => {
         try {
             localStorage.setItem('currentView', viewName);
@@ -203,9 +201,6 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
             }
         } catch (error) {
             console.error("Error during switchView:", error);
-        } finally {
-            loader.classList.remove('opacity-100');
-            loader.classList.add('opacity-0', 'pointer-events-none');
         }
-    }, 300);
+    }, 15);
     }

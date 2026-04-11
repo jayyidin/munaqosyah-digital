@@ -15,7 +15,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadFirebaseSettings(callback) {
-        callback(loadAppSettings());
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            try {
+                firebase.firestore().collection('appData').doc('settings').get().then(doc => {
+                    if (doc.exists) {
+                        const settings = doc.data();
+                        const current = loadAppSettings();
+                        const merged = { ...current, ...settings };
+                        localStorage.setItem('munaqosyahSettings', JSON.stringify(merged));
+                        callback(merged);
+                    } else {
+                        callback(loadAppSettings());
+                    }
+                }).catch(err => {
+                    callback(loadAppSettings());
+                });
+            } catch (e) { callback(loadAppSettings()); }
+        } else {
+            callback(loadAppSettings());
+        }
     }
 
     // --- Apply App Name and Logo on Login Page ---
@@ -92,6 +110,20 @@ document.addEventListener('DOMContentLoaded', () => {
             icon.textContent = type === 'password' ? 'visibility' : 'visibility_off';
         });
     }
+
+    // Logika untuk toggle visibilitas password pada form pendaftaran
+    const togglePasswordBtns = document.querySelectorAll('.toggle-password-btn');
+    togglePasswordBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            if (targetInput) {
+                const type = targetInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                targetInput.setAttribute('type', type);
+                btn.querySelector('span').textContent = type === 'password' ? 'visibility' : 'visibility_off';
+            }
+        });
+    });
 
     // Menangani proses login saat form di-submit
     if (loginForm) {
@@ -293,9 +325,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         }
 
+        let localUsers = {};
         const localUsersStr = localStorage.getItem('localUsers');
-        if (localUsersStr) {
-            const localUsers = JSON.parse(localUsersStr);
+        if (localUsersStr) localUsers = JSON.parse(localUsersStr);
+
+        // Ambil data user terbaru dari Firebase jika tersedia agar login di perangkat lain berfungsi
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            try {
+                const snap = await firebase.firestore().collection('users').get();
+                snap.forEach(doc => { localUsers[doc.id] = doc.data(); });
+                localStorage.setItem('localUsers', JSON.stringify(localUsers));
+            } catch(e) {}
+        }
+
+        if (Object.keys(localUsers).length > 0) {
             const userKey = Object.keys(localUsers).find(k => localUsers[k].username === username.toLowerCase());
             if (userKey) {
                 const user = localUsers[userKey];
@@ -318,6 +361,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const localUsersStr = localStorage.getItem('localUsers');
             let localUsers = localUsersStr ? JSON.parse(localUsersStr) : {};
             
+            // Sinkronisasi data user dari DB sebelum mendaftar untuk mencegah duplikat username antar perangkat
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                try {
+                    const snap = await firebase.firestore().collection('users').get();
+                    snap.forEach(doc => { localUsers[doc.id] = doc.data(); });
+                } catch(e) {}
+            }
+
             let counter = 1;
             let checkUsername = finalUsername;
             while (Object.keys(localUsers).some(k => localUsers[k].username === checkUsername)) {
@@ -327,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
             finalUsername = checkUsername;
 
             const uid = 'user_' + new Date().getTime();
-            localUsers[uid] = {
+            const newUser = {
                 uid: uid,
                 name,
                 username: finalUsername,
@@ -335,7 +386,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 role: 'Guru Penguji',
                 profilePicUrl: null
             };
+            localUsers[uid] = newUser;
             localStorage.setItem('localUsers', JSON.stringify(localUsers));
+
+            // Simpan ke Firebase agar Admin dapat melihat di daftar Guru Penguji
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                try {
+                    await firebase.firestore().collection('users').doc(uid).set(newUser);
+                } catch (e) {
+                    console.warn("Gagal menyimpan akun ke cloud:", e);
+                }
+            }
+
             return { success: true };
     }
 });
