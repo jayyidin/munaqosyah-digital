@@ -15,7 +15,13 @@ function getFilteredLaporanData(allData) {
     const sortTerm = sortEl ? sortEl.value : 'score_desc';
 
     let dataToFilter = [...allData];
-    if (filterKat) dataToFilter = dataToFilter.filter(s => s.kategori === filterKat);
+    if (filterKat) {
+        const cleanFilter = filterKat.toLowerCase().replace(/[^a-z0-9]/g, '');
+        dataToFilter = dataToFilter.filter(s => {
+            const cleanSk = s.kategori ? s.kategori.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+            return s.kategori === filterKat || cleanSk.includes(cleanFilter) || cleanFilter.includes(cleanSk);
+        });
+    }
     if (filterKelas) dataToFilter = dataToFilter.filter(s => s.kelas === filterKelas);
     if (filterTanggal) dataToFilter = dataToFilter.filter(s => s.tanggalUjian === filterTanggal);
     if (filterStatus === 'lulus') dataToFilter = dataToFilter.filter(s => s.lulus);
@@ -28,7 +34,7 @@ function getFilteredLaporanData(allData) {
         dataToFilter = dataToFilter.filter(s => {
             const prefixBaru = `${semester}_${s.id}_`;
             const prefixLama = `${s.id}_`;
-            return typeof statePenilaian !== 'undefined' && Object.keys(statePenilaian).some(key => 
+            return typeof statePenilaian !== 'undefined' && Object.keys(statePenilaian).some(key =>
                 (key.startsWith(prefixBaru) || (!key.includes(semester) && key.startsWith(prefixLama))) && statePenilaian[key] && statePenilaian[key].penguji === filterPenguji
             );
         });
@@ -36,12 +42,12 @@ function getFilteredLaporanData(allData) {
     if (searchTerm) {
         const semester = window.currentState.semester;
         dataToFilter = dataToFilter.filter(s => {
-            const matchNameOrId = s.nama.toLowerCase().includes(searchTerm) || s.id.toLowerCase().includes(searchTerm);
+            const matchNameOrId = (s.nama && s.nama.toLowerCase().includes(searchTerm)) || (s.id && s.id.toLowerCase().includes(searchTerm));
             if (matchNameOrId) return true;
-            
+
             const prefixBaru = `${semester}_${s.id}_`;
             const prefixLama = `${s.id}_`;
-            return typeof statePenilaian !== 'undefined' && Object.keys(statePenilaian).some(key => 
+            return typeof statePenilaian !== 'undefined' && Object.keys(statePenilaian).some(key =>
                 (key.startsWith(prefixBaru) || (!key.includes(semester) && key.startsWith(prefixLama))) && statePenilaian[key] && statePenilaian[key].penguji && statePenilaian[key].penguji.toLowerCase().includes(searchTerm)
             );
         });
@@ -102,66 +108,67 @@ function renderLaporanPage() {
 
     // 2. Defer data processing
     setTimeout(() => {
-        // Panggil fungsi secara eksplisit pada window (global scope) untuk menghindari ReferenceError
-        const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
+        try {
+            // Panggil fungsi secara eksplisit pada window (global scope) untuk menghindari ReferenceError
+            const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
 
-        const totalSiswa = allData.length;
-        const selesai = allData.filter(s => s.progress === 100).length;
-        const lulus = allData.filter(s => s.lulus).length;
-        const mumtaz = allData.filter(s => s.predikat.text === 'Mumtaz').length;
-        const totalSemuaNilai = allData.reduce((acc, s) => acc + (s.totalNilai || 0), 0);
-        const totalSemuaPenilaian = allData.reduce((acc, s) => acc + (s.jumlahPenilaian || 0), 0);
-        const totalAvg = totalSemuaPenilaian > 0 ? (totalSemuaNilai / totalSemuaPenilaian).toFixed(1) : '0.0';
-        const persentaseLulus = totalSiswa > 0 ? Math.round((lulus / totalSiswa) * 100) : 0;
+            const totalSiswa = allData.length;
+            const selesai = allData.filter(s => s.progress === 100).length;
+            const lulus = allData.filter(s => s.lulus).length;
+            const mumtaz = allData.filter(s => s.predikat.text === 'Mumtaz').length;
+            const totalSemuaNilai = allData.reduce((acc, s) => acc + (s.totalNilai || 0), 0);
+            const totalSemuaPenilaian = allData.reduce((acc, s) => acc + (s.jumlahPenilaian || 0), 0);
+            const totalAvg = totalSemuaPenilaian > 0 ? (totalSemuaNilai / totalSemuaPenilaian).toFixed(1) : '0.0';
+            const persentaseLulus = totalSiswa > 0 ? Math.round((lulus / totalSiswa) * 100) : 0;
 
-        document.getElementById('laporan-stat-selesai').innerHTML = `${selesai} <span class="text-sm font-medium text-gray-400">/ ${totalSiswa}</span>`;
-        document.getElementById('laporan-stat-rata-rata').textContent = totalAvg;
-        document.getElementById('laporan-stat-lulus').innerHTML = `${lulus} <span class="text-sm font-medium text-emerald-500 text-[10px]">(${persentaseLulus}%)</span>`;
-        document.getElementById('laporan-stat-mumtaz').textContent = `${mumtaz} Siswa`;
+            document.getElementById('laporan-stat-selesai').innerHTML = `${selesai} <span class="text-sm font-medium text-gray-400">/ ${totalSiswa}</span>`;
+            document.getElementById('laporan-stat-rata-rata').textContent = totalAvg;
+            document.getElementById('laporan-stat-lulus').innerHTML = `${lulus} <span class="text-sm font-medium text-emerald-500 text-[10px]">(${persentaseLulus}%)</span>`;
+            document.getElementById('laporan-stat-mumtaz').textContent = `${mumtaz} Siswa`;
 
-        const filteredData = getFilteredLaporanData(allData);
+            const filteredData = getFilteredLaporanData(allData);
 
-        // Fitur 4: Render Grafik Distribusi Predikat
-        renderDistributionChart(filteredData);
+            // Fitur 4: Render Grafik Distribusi Predikat
+            renderDistributionChart(filteredData);
 
-        laporanPagination.totalItems = filteredData.length;
-        laporanPagination.totalPages = Math.ceil(laporanPagination.totalItems / laporanPagination.itemsPerPage);
-        if (laporanPagination.currentPage > laporanPagination.totalPages) laporanPagination.currentPage = laporanPagination.totalPages || 1;
+            laporanPagination.totalItems = filteredData.length;
+            laporanPagination.totalPages = Math.ceil(laporanPagination.totalItems / laporanPagination.itemsPerPage);
+            if (laporanPagination.currentPage > laporanPagination.totalPages) laporanPagination.currentPage = laporanPagination.totalPages || 1;
 
-        const startIndex = (laporanPagination.currentPage - 1) * laporanPagination.itemsPerPage;
-        const paginatedData = filteredData.slice(startIndex, startIndex + laporanPagination.itemsPerPage);
+            const startIndex = (laporanPagination.currentPage - 1) * laporanPagination.itemsPerPage;
+            const paginatedData = filteredData.slice(startIndex, startIndex + laporanPagination.itemsPerPage);
 
-        let html = '';
-        if (paginatedData.length === 0) {
-            html = `<div class="col-span-full text-center py-20 bg-white rounded-3xl border border-gray-200 shadow-sm border-dashed"><div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mx-auto mb-4"><span class="material-symbols-outlined text-4xl">folder_off</span></div><h3 class="text-lg font-extrabold text-teal-950 font-headline mb-1">Tidak Ada Data Laporan</h3><p class="text-sm text-gray-400 max-w-sm mx-auto">Sesuaikan filter atau gunakan fitur pencarian untuk menemukan data yang spesifik.</p></div>`;
-        } else {
-            paginatedData.forEach((s) => {
-                const predikatIcon = s.predikat.icon ? `<span class="material-symbols-outlined text-base ${s.predikat.color}">${s.predikat.icon}</span>` : '';
-                const badgeSusulan = s.isSusulan ? `<span class="px-2 py-0.5 text-[9px] font-bold rounded-md border border-orange-200 bg-orange-50 text-orange-600 ml-2 align-middle">Susulan</span>` : '';
-                const isChecked = selectedLaporanPeserta.some(item => item.id === s.id && item.kategori === s.kategori);
-                const borderClass = isChecked ? 'border-primary ring-2 ring-primary/20 shadow-md bg-teal-50/10' : 'border-gray-100 shadow-sm hover:shadow-xl hover:shadow-teal-900/5 hover:-translate-y-1';
-                let statusBadge, statusText;
-                if (s.progress === 0) {
-                    statusBadge = 'border-gray-200 bg-gray-50 text-gray-500';
-                    statusText = 'Belum Ujian';
-                } else if (s.lulus) {
-                    statusBadge = 'border-emerald-200 bg-emerald-50 text-emerald-700';
-                    statusText = 'Lulus';
-                } else if (s.adaNilaiDiBawahKKM) {
-                    statusBadge = 'border-red-200 bg-red-50 text-red-600';
-                    statusText = 'Remedial';
-                } else {
-                    statusBadge = 'border-amber-200 bg-amber-50 text-amber-600';
-                    statusText = 'Belum Selesai';
-                }
+            let html = '';
+            if (paginatedData.length === 0) {
+                html = `<div class="col-span-full text-center py-20 bg-white rounded-3xl border border-gray-200 shadow-sm border-dashed"><div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mx-auto mb-4"><span class="material-symbols-outlined text-4xl">folder_off</span></div><h3 class="text-lg font-extrabold text-teal-950 font-headline mb-1">Tidak Ada Data Laporan</h3><p class="text-sm text-gray-400 max-w-sm mx-auto">Sesuaikan filter atau gunakan fitur pencarian untuk menemukan data yang spesifik.</p></div>`;
+            } else {
+                paginatedData.forEach((s) => {
+                    const predikatIcon = s.predikat.icon ? `<span class="material-symbols-outlined text-base ${s.predikat.color}">${s.predikat.icon}</span>` : '';
+                    const badgeSusulan = s.isSusulan ? `<span class="px-2 py-0.5 text-[9px] font-bold rounded-md border border-orange-200 bg-orange-50 text-orange-600 ml-2 align-middle">Susulan</span>` : '';
+                    const isChecked = selectedLaporanPeserta.some(item => item.id === s.id && item.kategori === s.kategori);
+                    const borderClass = isChecked ? 'border-primary ring-2 ring-primary/20 shadow-md bg-teal-50/10' : 'border-gray-100 shadow-sm hover:shadow-xl hover:shadow-teal-900/5 hover:-translate-y-1';
+                    let statusBadge, statusText;
+                    if (s.progress === 0) {
+                        statusBadge = 'border-gray-200 bg-gray-50 text-gray-500';
+                        statusText = 'Belum Ujian';
+                    } else if (s.lulus) {
+                        statusBadge = 'border-emerald-200 bg-emerald-50 text-emerald-700';
+                        statusText = 'Lulus';
+                    } else if (s.adaNilaiDiBawahKKM) {
+                        statusBadge = 'border-red-200 bg-red-50 text-red-600';
+                        statusText = 'Remedial';
+                    } else {
+                        statusBadge = 'border-amber-200 bg-amber-50 text-amber-600';
+                        statusText = 'Belum Selesai';
+                    }
 
-                const kkm = (typeof appSettings !== 'undefined' && appSettings.kkm) ? parseFloat(appSettings.kkm) : 7.0;
-                const avgColor = (s.progress === 0 || s.avg >= kkm) ? 'text-teal-950' : 'text-red-500';
-                const avgText = s.progress === 0 ? '-' : s.avg;
-                const predikatText = s.progress === 0 ? '-' : `${predikatIcon} ${s.predikat.text}`;
-                const predikatColor = s.progress === 0 ? 'text-gray-400' : s.predikat.color;
+                    const kkm = (typeof appSettings !== 'undefined' && appSettings.kkm) ? parseFloat(appSettings.kkm) : 7.0;
+                    const avgColor = (s.progress === 0 || s.avg >= kkm) ? 'text-teal-950' : 'text-red-500';
+                    const avgText = s.progress === 0 ? '-' : s.avg;
+                    const predikatText = s.progress === 0 ? '-' : `${predikatIcon} ${s.predikat.text}`;
+                    const predikatColor = s.progress === 0 ? 'text-gray-400' : s.predikat.color;
 
-                html += `
+                    html += `
                 <div class="bg-white rounded-[24px] p-5 border ${borderClass} transition-all duration-300 group flex flex-col relative cursor-pointer" onclick="const chk = this.querySelector('input[type=checkbox]'); chk.checked = !chk.checked; toggleLaporanSelection('${s.id}', '${s.kategori}', chk.checked)">
                     <div class="absolute top-5 right-5 z-20" onclick="event.stopPropagation()">
                         <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleLaporanSelection('${s.id}', '${s.kategori}', this.checked)" class="w-5 h-5 rounded-md border-gray-300 text-primary focus:ring-primary cursor-pointer shadow-sm transition-all hover:scale-110 active:scale-95">
@@ -199,13 +206,17 @@ function renderLaporanPage() {
                         </div>
                     </div>
                 </div>`;
-            });
+                });
+            }
+
+            const finalContainer = document.getElementById('container-laporan-cards');
+            if (finalContainer) finalContainer.innerHTML = html;
+
+            renderLaporanPagination();
+        } catch (error) {
+            console.error("Error in renderLaporanPage:", error);
+            container.innerHTML = `<div class="col-span-full py-10 text-center bg-red-50 text-red-500 rounded-2xl border border-red-200">Terjadi kesalahan saat memuat data laporan.<br><span class="text-xs font-mono">${error.message}</span></div>`;
         }
-
-        const finalContainer = document.getElementById('container-laporan-cards');
-        if (finalContainer) finalContainer.innerHTML = html;
-
-        renderLaporanPagination();
     }, 200);
 }
 
@@ -264,15 +275,15 @@ function renderDistributionChart(filteredData) {
     const chartContainer = document.getElementById('laporan-distribution-chart');
     const barContainer = document.getElementById('laporan-dist-bar');
     const legendContainer = document.getElementById('laporan-dist-legend');
-    
+
     if (!chartContainer || !barContainer || !legendContainer) return;
-    
+
     if (filteredData.length === 0) {
         chartContainer.classList.add('hidden');
         chartContainer.classList.remove('flex');
         return;
     }
-    
+
     const distribution = {
         'Mumtaz': { count: 0, color: 'bg-amber-500', labelColor: 'text-amber-600' },
         'Jayyid Jiddan': { count: 0, color: 'bg-emerald-500', labelColor: 'text-emerald-600' },
@@ -282,11 +293,11 @@ function renderDistributionChart(filteredData) {
         'Remedial': { count: 0, color: 'bg-red-400', labelColor: 'text-red-500' },
         'Belum Selesai': { count: 0, color: 'bg-gray-400', labelColor: 'text-gray-500' }
     };
-    
+
     let total = 0;
     filteredData.forEach(s => {
         if (s.progress === 0) return; // Abaikan siswa yang belum ujian
-        
+
         if (distribution[s.predikat.text]) {
             distribution[s.predikat.text].count++;
             total++;
@@ -295,19 +306,19 @@ function renderDistributionChart(filteredData) {
             total++;
         }
     });
-    
+
     if (total === 0) {
         chartContainer.classList.add('hidden');
         chartContainer.classList.remove('flex');
         return;
     }
-    
+
     chartContainer.classList.remove('hidden');
     chartContainer.classList.add('flex');
-    
+
     let barHtml = '';
     let legendHtml = '';
-    
+
     Object.entries(distribution).forEach(([key, data]) => {
         if (data.count > 0) {
             const percentage = (data.count / total) * 100;
@@ -315,7 +326,7 @@ function renderDistributionChart(filteredData) {
             legendHtml += `<div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full ${data.color}"></div> <span class="${data.labelColor}">${key} (${data.count})</span></div>`;
         }
     });
-    
+
     barContainer.innerHTML = barHtml;
     legendContainer.innerHTML = legendHtml;
 }
@@ -323,7 +334,7 @@ function renderDistributionChart(filteredData) {
 function toggleLaporanSelection(id, kat, checked) {
     if (checked) {
         if (!selectedLaporanPeserta.some(item => item.id === id && item.kategori === kat)) {
-            selectedLaporanPeserta.push({id, kategori: kat});
+            selectedLaporanPeserta.push({ id, kategori: kat });
         }
     } else {
         selectedLaporanPeserta = selectedLaporanPeserta.filter(item => !(item.id === id && item.kategori === kat));
@@ -336,7 +347,7 @@ function updateLaporanBulkActionBar() {
     const bar = document.getElementById('laporan-bulk-action-bar');
     const countEl = document.getElementById('laporan-bulk-count');
     if (!bar || !countEl) return;
-    
+
     if (selectedLaporanPeserta.length > 0) {
         countEl.innerText = selectedLaporanPeserta.length;
         bar.classList.remove('hidden');
@@ -353,7 +364,7 @@ function batalPilihSemuaLaporan() {
     renderLaporanPage();
 }
 
-window.handleSelectMassalLaporan = function(action) {
+window.handleSelectMassalLaporan = function (action) {
     const selectEl = document.getElementById('select-pilih-massal-laporan');
     if (!action) return;
 
@@ -370,7 +381,7 @@ window.handleSelectMassalLaporan = function(action) {
 
         filteredData.forEach(s => {
             if (!selectedLaporanPeserta.some(item => item.id === s.id && item.kategori === s.kategori)) {
-                selectedLaporanPeserta.push({id: s.id, kategori: s.kategori});
+                selectedLaporanPeserta.push({ id: s.id, kategori: s.kategori });
             }
         });
     }
@@ -396,26 +407,26 @@ function cetakSyahadah(id, kat) {
 
 function cetakSyahadahMassal() {
     if (selectedLaporanPeserta.length === 0) return;
-    
+
     const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
     const targetPeserta = [];
-    
+
     selectedLaporanPeserta.forEach(sel => {
         const p = allData.find(x => x.id === sel.id && x.kategori === sel.kategori);
         if (p && p.lulus) {
             targetPeserta.push(p);
         }
     });
-    
+
     if (targetPeserta.length === 0) {
         openAlert("Dari peserta yang dipilih, tidak ada yang berstatus lulus.");
         return;
     }
-    
+
     if (targetPeserta.length < selectedLaporanPeserta.length) {
         openAlert(`Hanya ${targetPeserta.length} dari ${selectedLaporanPeserta.length} peserta terpilih yang berstatus lulus dan akan dicetak.`);
     }
-    
+
     generatePrintSyahadah(targetPeserta);
     batalPilihSemuaLaporan();
 }
@@ -427,7 +438,7 @@ function generatePrintSyahadah(pesertaList) {
         return;
     }
 
-    const appName = appSettings.appName ? appSettings.appName.replace(/<br\s*\/?>/gi, ' ') : 'Aplikasi Munaqosyah';
+    const appName = appSettings.appName ? appSettings.appName.replace(/<br\s*[\/]?>/gi, ' ') : 'Aplikasi Munaqosyah';
     const schoolName = appSettings.schoolName || '';
     const logoUrl = appSettings.logoUrl || '';
 
@@ -494,11 +505,14 @@ function generatePrintSyahadah(pesertaList) {
     pesertaList.forEach(p => {
         const logoHtml = logoUrl ? `<img src="${logoUrl}" class="logo">` : '';
         const bgLogoHtml = logoUrl ? `<img src="${logoUrl}" class="watermark">` : '';
-        
+
         let pengujiSet = new Set();
         if (typeof statePenilaian !== 'undefined') {
+            const semester = p.semester;
+            const prefixBaru = `${semester}_${p.id}_`;
+            const prefixLama = `${p.id}_`;
             Object.keys(statePenilaian).forEach(key => {
-                if (key.startsWith(p.id + '_') && statePenilaian[key] && statePenilaian[key].penguji) {
+                if ((key.startsWith(prefixBaru) || (!key.includes(semester) && key.startsWith(prefixLama))) && statePenilaian[key] && statePenilaian[key].penguji) {
                     pengujiSet.add(statePenilaian[key].penguji);
                 }
             });
@@ -569,7 +583,7 @@ function setupLaporanFilters() {
 
     if (katFilter) katFilter.innerHTML = '<option value="">Semua Kategori</option>' + listKategori.map(k => `<option value="${k.nama}">${k.nama}</option>`).join('');
     if (kelasFilter) kelasFilter.innerHTML = '<option value="">Semua Kelas</option>' + listKelas.map(k => `<option value="${k}">${k}</option>`).join('');
-    
+
     if (tglFilter) {
         const dates = (typeof appSettings !== 'undefined' && appSettings.examDates) ? [...appSettings.examDates] : [];
         if (typeof dataPeserta !== 'undefined') {
@@ -610,7 +624,7 @@ function setupLaporanFilters() {
 function bukaModalLaporanDetail(studentId, kategori) {
     window.pulihkanCurrentState();
     const semester = window.currentState.semester;
-    const pList = dataPeserta[`${semester}_${kategori}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null) || [];
+    const pList = dataPeserta[`${semester}_${kategori}`] || dataPeserta[kategori] || [];
     const peserta = pList.find(p => p.id === studentId);
     if (!peserta) {
         openAlert("Data peserta tidak ditemukan.");
@@ -682,17 +696,20 @@ function eksporDataLaporan() {
 
     filteredData.forEach(s => {
         const keterangan = s.isSusulan ? 'Ujian Susulan' : 'Reguler';
-        
+
         let pengujiSet = new Set();
         if (typeof statePenilaian !== 'undefined') {
+            const semester = s.semester;
+            const prefixBaru = `${semester}_${s.id}_`;
+            const prefixLama = `${s.id}_`;
             Object.keys(statePenilaian).forEach(key => {
-                if (key.startsWith(s.id + '_') && statePenilaian[key] && statePenilaian[key].penguji) {
+                if ((key.startsWith(prefixBaru) || (!key.includes(semester) && key.startsWith(prefixLama))) && statePenilaian[key] && statePenilaian[key].penguji) {
                     pengujiSet.add(statePenilaian[key].penguji);
                 }
             });
         }
         const namaPenguji = Array.from(pengujiSet).join(' & ') || '-';
-        
+
         let statusText = 'Belum Ujian';
         if (s.progress > 0) {
             if (s.lulus) statusText = 'Lulus';
@@ -740,7 +757,7 @@ function cetakRekapLaporan() {
     }
 
     // Load app settings for header
-    const appName = appSettings.appName ? appSettings.appName.replace(/<br\s*\/?>/gi, ' ') : 'Aplikasi Munaqosyah';
+    const appName = appSettings.appName ? appSettings.appName.replace(/<br\s*[\/]?>/gi, ' ') : 'Aplikasi Munaqosyah';
     const schoolName = appSettings.schoolName || '';
     const printTitle = schoolName ? `Laporan Nilai ${appName} - ${schoolName}` : `Laporan Nilai ${appName}`;
 
@@ -801,7 +818,7 @@ function cetakRekapLaporan() {
         let statusText = 'Belum Ujian';
         let avgColorClass = s.avg < (appSettings.kkm || 7) ? 'color: #dc2626;' : 'color: #003336;';
         let avgText = s.avg;
-        
+
         if (s.progress === 0) {
             statusBadgeClass = 'badge-belum';
             statusText = 'Belum Ujian';
@@ -818,7 +835,7 @@ function cetakRekapLaporan() {
             statusBadgeClass = 'badge-sedang';
             statusText = 'Belum Selesai';
         }
-        
+
         const ketText = s.isSusulan ? '<span style="color:#d97706;font-weight:bold;font-size:10px;">Susulan</span>' : '-';
 
         printWindow.document.write(`
@@ -850,17 +867,17 @@ function cetakRekapLaporan() {
     printWindow.print();
 }
 
-function bukaProfilSiswa(id, kat) {
+window.bukaProfilSiswa = function (id, kat) {
     window.pulihkanCurrentState();
     const semester = window.currentState.semester;
-    const pList = dataPeserta[`${semester}_${kat}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null) || [];
+    const pList = dataPeserta[`${semester}_${kat}`] || dataPeserta[kat] || [];
     const p = pList.find(x => x.id === id); if (!p) return;
     const s = getStatusPeserta(id, kat, semester);
 
     let tanggalUjianHtml = '';
     if (p.tanggalUjian) {
-        const date = new Date(p.tanggalUjian + 'T00:00:00');
-        const formatted = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const [y, m, d] = p.tanggalUjian.split('-');
+        const formatted = new Date(y, m - 1, d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
         tanggalUjianHtml = `<div class="mt-2 bg-teal-50 text-teal-700 border border-teal-100 inline-flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full">
             <span class="material-symbols-outlined text-sm">calendar_month</span>
             <span>${formatted}</span>
@@ -967,7 +984,7 @@ window.toggleLembarState = function (index, surahNo) {
 
     window.saveLocalState();
     renderLembarGrid(surahNo);
-    
+
     // Memicu event input secara manual agar ditangkap oleh Auto-Save
     const modalPenilaianEl = document.getElementById('modal-penilaian');
     if (modalPenilaianEl) modalPenilaianEl.dispatchEvent(new Event('input', { bubbles: true }));
@@ -985,16 +1002,51 @@ function bukaPenilaianDariProfil() {
         const selectEl = document.getElementById('kategori-select');
         if (selectEl) selectEl.value = currentState.kategori;
         if (typeof window.filterUjianPeserta === 'function') window.filterUjianPeserta();
-                
-                if (typeof window.bukaDetailPenilaian === 'function') {
-                    window.bukaDetailPenilaian(currentState.studentId, currentState.kategori);
-                } else if (typeof switchView === 'function') {
-                    switchView('penilaian-detail', currentState.studentId, currentState.kategori);
-                }
+
+        if (typeof window.bukaDetailPenilaian === 'function') {
+            window.bukaDetailPenilaian(currentState.studentId, currentState.kategori);
+        } else if (typeof switchView === 'function') {
+            switchView('penilaian-detail', currentState.studentId, currentState.kategori);
+        }
     }, 100);
 }
 
-window.bagikanHasil = function(id, kat) {
+window.salinTeksKeClipboard = function(text, successMsg, fallbackUrl) {
+    const execCopy = () => {
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (successful) {
+                if (typeof openAlert === 'function') openAlert(successMsg);
+                else alert(successMsg);
+            } else {
+                if (fallbackUrl) prompt("Sistem memblokir salin otomatis. Silakan salin tautan ini:", fallbackUrl);
+                else alert("Sistem peramban Anda memblokir fitur salin otomatis.");
+            }
+        } catch (err) {
+            if (fallbackUrl) prompt("Sistem memblokir salin otomatis. Silakan salin tautan ini:", fallbackUrl);
+            else alert("Sistem peramban Anda memblokir fitur salin otomatis.");
+        }
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            if (typeof openAlert === 'function') openAlert(successMsg);
+            else alert(successMsg);
+        }).catch(err => execCopy());
+    } else {
+        execCopy();
+    }
+};
+
+window.bagikanHasil = function (id, kat) {
     window.pulihkanCurrentState();
     const semester = window.currentState.semester;
     if (!semester) {
@@ -1002,21 +1054,30 @@ window.bagikanHasil = function(id, kat) {
         return;
     }
     
+    const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
+    const p = allData.find(x => x.id === id && x.kategori === kat);
+    
+    if (!p) {
+        if (typeof openAlert === 'function') openAlert("Data peserta tidak ditemukan.");
+        return;
+    }
+
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
     const shareUrl = `${baseUrl}hasil.html?id=${encodeURIComponent(id)}&kat=${encodeURIComponent(kat)}&sem=${encodeURIComponent(semester)}`;
     
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-            if (typeof openAlert === 'function') openAlert("Tautan hasil ujian berhasil disalin ke clipboard!\n\nAnda dapat membagikannya kepada siswa/orang tua.\n\n" + shareUrl);
-        }).catch(err => {
-            prompt("Gagal menyalin otomatis. Silakan salin tautan berikut secara manual:", shareUrl);
-        });
-    } else {
-        prompt("Silakan salin tautan hasil ujian berikut untuk dibagikan:", shareUrl);
-    }
+    const defaultTemplate = "Assalamu'alaikum wr. wb.\n\nBerikut adalah hasil Ujian Munaqosyah untuk Ananda *{nama}* pada kategori *{kategori}*.\n\nSilakan klik tautan di bawah ini untuk melihat rincian nilai:\n{link}\n\nTerima kasih.";
+    let template = (typeof appSettings !== 'undefined' && appSettings.waTemplateIndividu) ? appSettings.waTemplateIndividu : defaultTemplate;
+    
+    const textToCopy = template
+        .replace(/{nama}/g, p.nama)
+        .replace(/{kategori}/g, kat)
+        .replace(/{link}/g, shareUrl);
+        
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToCopy)}`;
+    window.open(waUrl, '_blank');
 };
 
-window.bagikanHasilFilter = function() {
+window.bagikanHasilFilter = function () {
     window.pulihkanCurrentState();
     const semester = window.currentState.semester;
     if (!semester) {
@@ -1035,25 +1096,57 @@ window.bagikanHasilFilter = function() {
     const filterPembimbing = document.getElementById('laporan-filter-pembimbing')?.value || '';
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
     
-    let textToCopy = `Assalamu'alaikum Wr. Wb.\n`;
-    if (filterPembimbing) {
-        textToCopy += `Berikut adalah tautan hasil ujian Munaqosyah santri bimbingan ${filterPembimbing} (Semester ${semester}):\n\n`;
-    } else {
-        textToCopy += `Berikut adalah tautan hasil ujian Munaqosyah (Semester ${semester}):\n\n`;
-    }
+    let listPesertaText = "";
 
     filteredData.forEach((p, index) => {
         const shareUrl = `${baseUrl}hasil.html?id=${encodeURIComponent(p.id)}&kat=${encodeURIComponent(p.kategori)}&sem=${encodeURIComponent(semester)}`;
-        textToCopy += `${index + 1}. ${p.nama} (${p.kategori})\n   Link: ${shareUrl}\n\n`;
+        listPesertaText += `- *${p.nama}*: ${shareUrl}\n`;
     });
 
-    textToCopy += `Terima kasih.`;
+    const defaultTemplate = "Assalamu'alaikum wr. wb.\n\nBerikut adalah tautan hasil Ujian Munaqosyah:\n\n{list_peserta}\n\nTerima kasih.";
+    let template = (typeof appSettings !== 'undefined' && appSettings.waTemplateMassal) ? appSettings.waTemplateMassal : defaultTemplate;
 
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            if (typeof openAlert === 'function') openAlert(`Berhasil menyalin ${filteredData.length} tautan hasil ujian ke papan klip!\n\nAnda dapat langsung menempelkannya (paste) ke grup WhatsApp.`);
-        }).catch(err => prompt("Gagal menyalin otomatis. Silakan salin teks berikut secara manual:", textToCopy));
-    } else {
-        prompt("Silakan salin teks berikut secara manual untuk dibagikan:", textToCopy);
+    const textToCopy = template.replace(/{list_peserta}/g, listPesertaText.trim());
+
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToCopy)}`;
+    window.open(waUrl, '_blank');
+};
+
+window.bagikanHasilMassal = function () {
+    if (typeof selectedLaporanPeserta === 'undefined' || selectedLaporanPeserta.length === 0) return;
+
+    window.pulihkanCurrentState();
+    const semester = window.currentState.semester;
+    if (!semester) {
+        if (typeof openAlert === 'function') openAlert("Pastikan semester telah dipilih terlebih dahulu.");
+        return;
     }
+
+    const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
+    const targetPeserta = [];
+
+    selectedLaporanPeserta.forEach(sel => {
+        const p = allData.find(x => x.id === sel.id && x.kategori === sel.kategori);
+        if (p) targetPeserta.push(p);
+    });
+
+    if (targetPeserta.length === 0) return;
+
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+    
+    let listPesertaText = "";
+
+    targetPeserta.forEach((p, index) => {
+        const shareUrl = `${baseUrl}hasil.html?id=${encodeURIComponent(p.id)}&kat=${encodeURIComponent(p.kategori)}&sem=${encodeURIComponent(semester)}`;
+        listPesertaText += `- *${p.nama}*: ${shareUrl}\n`;
+    });
+
+    const defaultTemplate = "Assalamu'alaikum wr. wb.\n\nBerikut adalah tautan hasil Ujian Munaqosyah:\n\n{list_peserta}\n\nTerima kasih.";
+    let template = (typeof appSettings !== 'undefined' && appSettings.waTemplateMassal) ? appSettings.waTemplateMassal : defaultTemplate;
+
+    const textToCopy = template.replace(/{list_peserta}/g, listPesertaText.trim());
+
+    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToCopy)}`;
+    window.open(waUrl, '_blank');
+    if (typeof batalPilihSemuaLaporan === 'function') batalPilihSemuaLaporan();
 };

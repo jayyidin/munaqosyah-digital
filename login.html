@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
@@ -35,7 +36,7 @@
         window.getAppTitle = function () {
             try {
                 const settings = JSON.parse(localStorage.getItem('munaqosyahSettings')) || {};
-                const appName = (settings.appName || 'Aplikasi Munaqosyah').replace(/<br\s*\/?>/gi, ' ');
+                const appName = (settings.appName || 'Aplikasi Munaqosyah').replace(/<br\s*[\/]?>/gi, ' ');
                 const schoolName = settings.schoolName || '';
                 return schoolName ? `${appName} - ${schoolName}` : appName;
             } catch (e) {

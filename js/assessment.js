@@ -33,25 +33,60 @@
 
         window.ujianPagination = window.ujianPagination || { currentPage: 1, itemsPerPage: 12, totalPages: 0, totalItems: 0 };
         window.renderUjianDateDisplay = function () {
-            const container = document.getElementById('display-tanggal-ujian');
-            if (!container) return;
+            const selectEl = document.getElementById('ujian-filter-tanggal');
+            if (!selectEl) return;
 
-            if (typeof appSettings !== 'undefined' && appSettings.examDates && appSettings.examDates.length > 0) {
-                const formattedDates = appSettings.examDates.map(d => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })).join(', ');
-                container.innerHTML = `<span class="material-symbols-outlined text-[18px]">calendar_month</span><span>${formattedDates}</span>`;
+            const currentVal = selectEl.value;
+            let dates = [];
+            
+            if (typeof appSettings !== 'undefined' && appSettings.examDates) {
+                dates = [...appSettings.examDates];
+            }
+            if (typeof dataPeserta !== 'undefined') {
+                Object.values(dataPeserta).forEach(list => {
+                    let arr = Array.isArray(list) ? list : (list.list || []);
+                    arr.forEach(p => {
+                        if (p.tanggalUjian && !dates.includes(p.tanggalUjian)) {
+                            dates.push(p.tanggalUjian);
+                        }
+                    });
+                });
+            }
+            dates.sort();
+
+            let html = '<option value="">Semua Tanggal Ujian</option>';
+            if (dates.length > 0) {
+                dates.forEach(d => {
+                    const [y, m, day] = d.split('-');
+                    const formatted = new Date(y, m - 1, day).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                    html += `<option value="${d}">${formatted}</option>`;
+                });
             } else {
-                container.innerHTML = `<span class="material-symbols-outlined text-[18px] text-red-500">event_busy</span><span class="text-red-500">Belum Diatur</span>`;
+                html = '<option value="">Belum Ada Tanggal</option>';
+            }
+
+            if (selectEl.innerHTML !== html) {
+                selectEl.innerHTML = html;
+                
+                // Set default to today if exists, else keep current
+                const todayStr = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0');
+                
+                if (!currentVal && dates.includes(todayStr)) {
+                    selectEl.value = todayStr;
+                } else if (currentVal && dates.includes(currentVal)) {
+                    selectEl.value = currentVal;
+                } else {
+                    selectEl.value = "";
+                }
             }
 
             // Tampilkan tombol Nilai Massal khusus Admin Utama
-            const btnMassal = document.getElementById('btn-nilai-massal');
+            const btnMassal = document.getElementById('ujian-pilih-massal-container');
             if (btnMassal) {
                 if (typeof currentUser !== 'undefined' && currentUser.role === 'Admin Utama') {
                     btnMassal.classList.remove('hidden');
-                    btnMassal.classList.add('flex');
                 } else {
                     btnMassal.classList.add('hidden');
-                    btnMassal.classList.remove('flex');
                 }
             }
         };
@@ -86,7 +121,105 @@
             }, 100); // Memberikan jeda waktu agar DOM halaman siap dirender
         };
 
-        window.filterUjianPeserta = function () {
+        // --- FITUR PILIH MASSAL UJIAN ---
+        window.selectedUjianPeserta = window.selectedUjianPeserta || [];
+
+        window.toggleUjianSelection = function(id, checked) {
+            if (checked) {
+                if (!window.selectedUjianPeserta.includes(id)) window.selectedUjianPeserta.push(id);
+            } else {
+                window.selectedUjianPeserta = window.selectedUjianPeserta.filter(item => item !== id);
+            }
+            window.updateUjianBulkActionBar();
+            window.filterUjianPeserta(true); // Panggil dengan skipSkeleton agar tabel tidak berkedip
+        };
+
+        window.updateUjianBulkActionBar = function() {
+            const bar = document.getElementById('ujian-bulk-action-bar');
+            const countEl = document.getElementById('ujian-bulk-count');
+            if (!bar || !countEl) return;
+            
+            if (window.selectedUjianPeserta.length > 0) {
+                countEl.innerText = window.selectedUjianPeserta.length;
+                bar.classList.remove('hidden');
+                bar.classList.add('flex');
+            } else {
+                bar.classList.remove('flex');
+                bar.classList.add('hidden');
+            }
+        };
+
+        window.batalPilihSemuaUjian = function() {
+            window.selectedUjianPeserta = [];
+            window.updateUjianBulkActionBar();
+            window.filterUjianPeserta(true);
+        };
+
+        window.handleSelectMassalUjian = function(action) {
+            const selectEl = document.getElementById('select-pilih-massal-ujian');
+            if (!action) return;
+
+            if (action === 'none') {
+                window.selectedUjianPeserta = [];
+            } else {
+                window.pulihkanCurrentState();
+                const katEl = document.getElementById('kategori-select');
+                const semester = window.currentState.semester;
+                const kategori = katEl ? katEl.value : window.currentState.kategori;
+                const searchEl = document.getElementById('search-ujian');
+                const searchTerm = searchEl ? searchEl.value.toLowerCase() : "";
+
+                let pesertaList = [];
+                if (typeof dataPeserta !== 'undefined' && dataPeserta) {
+                    Object.keys(dataPeserta).forEach(key => {
+                        let studentDocSemester = null;
+                        let kat = key;
+                        if (key.includes('_')) {
+                            const firstUnderscore = key.indexOf('_');
+                            studentDocSemester = key.substring(0, firstUnderscore);
+                            kat = key.substring(firstUnderscore + 1);
+                        }
+                        
+                        if (studentDocSemester && studentDocSemester !== semester) return;
+
+                        if (!kategori || kat === kategori) {
+                            let list = dataPeserta[key];
+                            if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+                            if (Array.isArray(list)) {
+                                list.forEach(p => {
+                                    if (p && typeof p === 'object' && p.nama) {
+                                        if (!p.id) p.id = `FIX-${Math.random().toString(36).substring(2, 9)}`;
+                                        pesertaList.push(p);
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+                
+                pesertaList = pesertaList.filter(p => p && typeof p === 'object' && p.nama);
+                if (searchTerm) pesertaList = pesertaList.filter(p => (p.nama && p.nama.toLowerCase().includes(searchTerm)) || (p.id && p.id.toLowerCase().includes(searchTerm)));
+                
+                const filterTanggalEl = document.getElementById('ujian-filter-tanggal');
+                const filterTanggal = filterTanggalEl ? filterTanggalEl.value : "";
+                if (filterTanggal) {
+                    pesertaList = pesertaList.filter(p => p.tanggalUjian === filterTanggal);
+                }
+
+                if (action === 'page') {
+                    const startIndex = (window.ujianPagination.currentPage - 1) * window.ujianPagination.itemsPerPage;
+                    pesertaList = pesertaList.slice(startIndex, startIndex + window.ujianPagination.itemsPerPage);
+                }
+
+                pesertaList.forEach(p => { if (!window.selectedUjianPeserta.includes(p.id)) window.selectedUjianPeserta.push(p.id); });
+            }
+
+            if (selectEl) selectEl.value = "";
+            window.updateUjianBulkActionBar();
+            window.filterUjianPeserta(true);
+        };
+
+        window.filterUjianPeserta = function (skipSkeleton = false) {
             window.pulihkanCurrentState();
             const katEl = document.getElementById('kategori-select');
             const semester = window.currentState.semester;
@@ -108,52 +241,71 @@
                 if (katEl && katEl.value !== kategori) katEl.value = kategori; // Sinkronkan nilai dropdown
             }
 
-            if (!semester) {
-                const container = document.getElementById('container-peserta-ujian');
-                if (container) {
-                    container.innerHTML = `<div class="col-span-full py-20 flex flex-col items-center justify-center text-center bg-white rounded-3xl border border-gray-100 shadow-sm border-dashed"><div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-5 relative"><span class="material-symbols-outlined text-5xl relative z-10">calendar_month</span></div><h3 class="text-xl font-extrabold text-teal-950 mb-2 font-headline">Pilih Semester</h3><p class="text-sm text-gray-500 max-w-sm">Silakan pilih semester terlebih dahulu di pojok kanan atas untuk melihat daftar peserta ujian.</p></div>`;
-                }
-                const paginationContainer = document.getElementById('pagination-ujian');
-                if (paginationContainer) paginationContainer.innerHTML = '';
-                return;
-            }
-
             const searchEl = document.getElementById('search-ujian');
             const searchTerm = searchEl ? searchEl.value.toLowerCase() : "";
             
             window.renderUjianDateDisplay();
+            
+            const filterTanggalEl = document.getElementById('ujian-filter-tanggal');
+            const filterTanggal = filterTanggalEl ? filterTanggalEl.value : "";
 
             const container = document.getElementById('container-peserta-ujian');
             if (!container) return;
 
-            let skeletonHtml = '';
-            const skeletonCount = window.ujianPagination.itemsPerPage > 0 ? Math.min(window.ujianPagination.itemsPerPage, 6) : 6;
-            for (let i = 0; i < skeletonCount; i++) {
-                skeletonHtml += `
-                <div class="bg-white rounded-[28px] p-1.5 shadow-sm border border-gray-100 animate-pulse">
-                    <div class="bg-gray-50 rounded-[22px] p-5 h-32"></div>
-                    <div class="px-5 py-3.5 bg-white rounded-b-[22px] mt-1 h-12"></div>
-                </div>`;
+            if (!skipSkeleton) {
+                let skeletonHtml = '';
+                const skeletonCount = window.ujianPagination.itemsPerPage > 0 ? Math.min(window.ujianPagination.itemsPerPage, 6) : 6;
+                for (let i = 0; i < skeletonCount; i++) {
+                    skeletonHtml += `
+                    <div class="bg-white rounded-[28px] p-1.5 shadow-sm border border-gray-100 animate-pulse">
+                        <div class="bg-gray-50 rounded-[22px] p-5 h-32"></div>
+                        <div class="px-5 py-3.5 bg-white rounded-b-[22px] mt-1 h-12"></div>
+                    </div>`;
+                }
+                container.innerHTML = skeletonHtml;
+                const paginationContainer = document.getElementById('pagination-ujian');
+                if (paginationContainer) paginationContainer.innerHTML = '';
             }
-            container.innerHTML = skeletonHtml;
-            const paginationContainer = document.getElementById('pagination-ujian');
-            if (paginationContainer) paginationContainer.innerHTML = '';
 
             setTimeout(() => {
+                try {
                 let pesertaList = [];
                 if (typeof dataPeserta !== 'undefined' && dataPeserta) {
-                    const key = `${semester}_${kategori}`;
-                    if (dataPeserta[key]) {
-                    pesertaList = Array.isArray(dataPeserta[key]) ? dataPeserta[key] : (Array.isArray(dataPeserta[key].list) ? dataPeserta[key].list : []);
-                    } else if (typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[kategori] && Array.isArray(dataPeserta[kategori])) {
-                        pesertaList = dataPeserta[kategori]; // Fallback data lama
-                    }
-                if (pesertaList && !Array.isArray(pesertaList) && Array.isArray(pesertaList.list)) pesertaList = pesertaList.list;
-                if (!Array.isArray(pesertaList)) pesertaList = [];
+                    Object.keys(dataPeserta).forEach(key => {
+                        let studentDocSemester = null;
+                        let kat = key;
+                        if (key.includes('_')) {
+                            const firstUnderscore = key.indexOf('_');
+                            studentDocSemester = key.substring(0, firstUnderscore);
+                            kat = key.substring(firstUnderscore + 1);
+                        }
+                        
+                        if (studentDocSemester && studentDocSemester !== semester) return;
+
+                        if (!kategori || kat === kategori) {
+                            let list = dataPeserta[key];
+                            if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+                            if (Array.isArray(list)) {
+                                list.forEach(p => {
+                                    if (p && typeof p === 'object' && p.nama) {
+                                        if (!p.id) p.id = `FIX-${Math.random().toString(36).substring(2, 9)}`;
+                                        pesertaList.push(p);
+                                    }
+                                });
+                            }
+                        }
+                    });
                 }
                 
+                // Filter valid object
+                pesertaList = pesertaList.filter(p => p && typeof p === 'object' && p.nama);
+                
                 if (searchTerm) {
-                    pesertaList = pesertaList.filter(p => p.nama.toLowerCase().includes(searchTerm) || p.id.toLowerCase().includes(searchTerm));
+                    pesertaList = pesertaList.filter(p => (p.nama && p.nama.toLowerCase().includes(searchTerm)) || (p.id && p.id.toLowerCase().includes(searchTerm)));
+                }
+
+                if (filterTanggal) {
+                    pesertaList = pesertaList.filter(p => p.tanggalUjian === filterTanggal);
                 }
 
                 // Pagination Calculation
@@ -181,16 +333,18 @@
                 </div>`;
             } else {
                 paginatedList.forEach(p => {
-                    const s = getStatusPeserta(p.id, kategori, semester);
+                    const s = typeof getStatusPeserta === 'function' ? getStatusPeserta(p.id, kategori, semester) : { progress: 0, completed: 0, total: 0 };
 
                     let surahListHtml = '';
-                    let flatList = window.getMateriList(kategori);
+                    let flatList = typeof window.getMateriList === 'function' ? window.getMateriList(kategori) : [];
 
                     if (flatList.length > 0) {
                         surahListHtml = '<div class="mt-4 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-2 pb-1 hide-scrollbar mask-bottom" onclick="event.stopPropagation();">';
                         flatList.forEach(item => {
                             if (!item || !item.no) return;
-                            const isDinilai = typeof statePenilaian !== 'undefined' && (statePenilaian[`${semester}_${p.id}_${item.no}`] !== undefined || statePenilaian[`${p.id}_${item.no}`] !== undefined);
+                            const stateKey1 = `${semester}_${p.id}_${item.no}`;
+                            const stateKey2 = `${p.id}_${item.no}`;
+                            const isDinilai = typeof statePenilaian !== 'undefined' && (statePenilaian[stateKey1] !== undefined || statePenilaian[stateKey2] !== undefined);
                             const badgeClass = isDinilai ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white text-gray-500 border-gray-200 hover:border-primary/30 hover:bg-primary/5';
                             const escapedNama = item.nama ? item.nama.replace(/'/g, "\\'") : '';
                             surahListHtml += `<span class="px-2.5 py-1 text-[9px] font-bold rounded-md border ${badgeClass} transition-colors" onclick="event.stopPropagation(); window.bukaDetailPenilaian('${p.id}', '${kategori}'); setTimeout(() => window.bukaFormPenilaian('${item.no}', '${escapedNama}'), 300)">${item.nama}</span>`;
@@ -200,13 +354,18 @@
 
                     let hasRecentUpdate = false;
                     if (window.sessionUpdatedMaterials) {
-                        hasRecentUpdate = Array.from(window.sessionUpdatedMaterials).some(key => key.startsWith(`${semester}_${p.id}_`));
+                        const prefix = semester ? `${semester}_${p.id}_` : `${p.id}_`;
+                        hasRecentUpdate = Array.from(window.sessionUpdatedMaterials).some(key => key.startsWith(prefix));
                     }
-                    const highlightClass = hasRecentUpdate ? 'border-amber-400 ring-4 ring-amber-400/30 animate-pulse relative z-10' : 'border-gray-100';
+                    const isChecked = window.selectedUjianPeserta && window.selectedUjianPeserta.includes(p.id);
+                    const borderClass = hasRecentUpdate ? 'border-amber-400 ring-4 ring-amber-400/30 animate-pulse relative z-10' : (isChecked ? 'border-primary ring-2 ring-primary/20 shadow-md bg-teal-50/10' : 'border-gray-100');
 
                     html += `
-                    <div class="bg-white rounded-[28px] p-1.5 shadow-sm hover:shadow-xl hover:shadow-teal-900/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-between border ${highlightClass} animate-view" onclick="window.bukaDetailPenilaian('${p.id}', '${kategori}')">
+                    <div class="bg-white rounded-[28px] p-1.5 shadow-sm hover:shadow-xl hover:shadow-teal-900/10 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-between border ${borderClass} animate-view" onclick="window.bukaDetailPenilaian('${p.id}', '${kategori}')">
                         <div class="bg-gray-50/60 rounded-[22px] p-5 relative overflow-hidden flex-1 flex flex-col">
+                            <div class="absolute top-3 right-3 z-20" onclick="event.stopPropagation()">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="window.toggleUjianSelection('${p.id}', this.checked)" class="w-5 h-5 rounded-md border-gray-300 text-primary focus:ring-primary cursor-pointer shadow-sm transition-all hover:scale-110 active:scale-95">
+                            </div>
                             <div class="absolute -right-6 -top-6 w-28 h-28 bg-gradient-to-br from-primary/5 to-transparent rounded-full pointer-events-none group-hover:scale-150 transition-transform duration-700 ease-out"></div>
                             <div class="flex items-start justify-between mb-5 relative z-10">
                                 <div class="flex items-center gap-3.5 w-full">
@@ -252,7 +411,11 @@
             const finalContainer = document.getElementById('container-peserta-ujian');
             if (finalContainer) finalContainer.innerHTML = html;
             window.renderUjianPaginationControls();
-            }, 200); // Jeda timeout agar kerangka pemuatan (skeleton) terlihat
+            } catch (error) {
+                console.error("Error in filterUjianPeserta:", error);
+                container.innerHTML = `<div class="col-span-full py-10 text-center bg-red-50 text-red-500 rounded-2xl border border-red-200">Terjadi kesalahan saat memuat data ujian.<br><span class="text-xs font-mono">${error.message}</span></div>`;
+            }
+            }, skipSkeleton ? 0 : 200); // Jeda timeout agar kerangka pemuatan (skeleton) terlihat
         };
 
         window.changeUjianPage = function(page) {
@@ -319,12 +482,19 @@
                 const kategori = window.currentState.kategori;
                 const semester = window.currentState.semester;
 
-                if (!studentId || !kategori || !semester) return;
+                if (!studentId || !kategori) return;
                 if (typeof dataPeserta === 'undefined' || !dataPeserta) return;
                 
-                const key = `${semester}_${kategori}`;
-                const pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null) || [];
-                const p = pList.find(x => x.id === studentId);
+                let p = null;
+                Object.values(dataPeserta).forEach(list => {
+                    let arr = list;
+                    if (arr && !Array.isArray(arr) && Array.isArray(arr.list)) arr = arr.list;
+                    if (Array.isArray(arr)) {
+                        const found = arr.find(x => x.id === studentId);
+                        if (found) p = found;
+                    }
+                });
+
                 if (!p) {
                     if (typeof window.renderDaftarSuratDetail === 'function') window.renderDaftarSuratDetail();
                     return;
@@ -378,9 +548,9 @@
                 const searchInput = document.getElementById('search-surat');
                 const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
 
-                if (!container || !kategori || !semester) return;
+                if (!container || !kategori) return;
 
-                let items = window.getMateriList(kategori);
+                let items = typeof window.getMateriList === 'function' ? window.getMateriList(kategori) : [];
 
                 if (searchTerm) {
                     items = items.filter(item => item && item.nama && item.nama.toLowerCase().includes(searchTerm));
@@ -396,18 +566,31 @@
                     html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
                     items.forEach(item => {
                         if (!item || !item.no) return;
-                        const penilaian = (typeof statePenilaian !== 'undefined' && statePenilaian) ? statePenilaian[`${semester}_${studentId}_${item.no}`] : undefined;
+                        const stateKey = semester ? `${semester}_${studentId}_${item.no}` : `${studentId}_${item.no}`;
+                        const penilaian = (typeof statePenilaian !== 'undefined' && statePenilaian) ? statePenilaian[stateKey] : undefined;
                         const isDinilai = penilaian && penilaian.nilai !== undefined;
                         const nilai = isDinilai ? penilaian.nilai : '-';
                         const kkm = (typeof appSettings !== 'undefined' && appSettings && appSettings.kkm) ? parseFloat(appSettings.kkm) : 7;
                         
                         window.sessionUpdatedMaterials = window.sessionUpdatedMaterials || new Set();
-                        const isRecentlyUpdated = window.sessionUpdatedMaterials.has(`${semester}_${studentId}_${item.no}`);
+                        const isRecentlyUpdated = window.sessionUpdatedMaterials.has(stateKey);
                         
                         let statusColor = 'text-gray-400 bg-gray-50 border-gray-200';
+                        let statusBadge = '';
+                        let pengujiText = '';
+                        
                         if (isDinilai) {
-                            // Ubah nilai di bawah 8 menjadi merah
-                            statusColor = (parseFloat(nilai) < 8) ? 'text-red-600 bg-red-50 border-red-200' : 'text-primary bg-primary/10 border-primary/20';
+                            const isLulus = parseFloat(nilai) >= kkm;
+                            statusColor = isLulus ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-red-600 bg-red-50 border-red-200';
+                            
+                            const badgeText = isLulus ? 'Lulus' : 'Remedial';
+                            const badgeClass = isLulus ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200';
+                            statusBadge = `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold border ${badgeClass}">${badgeText}</span>`;
+                            
+                            const pengujiName = penilaian.penguji;
+                            if (pengujiName && !pengujiName.toLowerCase().includes('admin') && !pengujiName.toLowerCase().includes('jayyidin')) {
+                                pengujiText = `<div class="mt-1 flex items-center gap-1 text-[10px] text-gray-500"><span class="material-symbols-outlined text-[12px]">edit_note</span> Dinilai oleh: <span class="font-bold text-teal-800">${pengujiName}</span></div>`;
+                            }
                         }
                         
                         const icon = typeof item.no === 'string' && item.no.startsWith('M') ? 'psychology' : (typeof item.no === 'string' && (item.no.startsWith('H') || item.no.startsWith('L')) ? 'auto_stories' : 'menu_book');
@@ -424,10 +607,12 @@
                             <div class="flex items-center gap-2">
                                 <h4 class="font-bold text-teal-950 text-base group-hover:text-primary transition-colors">${item.nama}</h4>
                                 ${isRecentlyUpdated ? '<span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-100 text-amber-700 border border-amber-200">Baru Diubah</span>' : ''}
+                                ${statusBadge}
                             </div>
                             <div class="flex flex-wrap items-center gap-2 mt-0.5">
                                 <p class="text-[11px] font-medium text-gray-500">${typeof item.ayat === 'number' ? item.ayat + ' Ayat' : item.ayat}</p>
                             </div>
+                            ${pengujiText}
                         </div>
                     </div>
                     <div class="flex items-center gap-2 sm:gap-4">
@@ -459,6 +644,41 @@
             if (typeof window.renderUjianForm === 'function') window.renderUjianForm();
         }
 
+window.salinTeksKeClipboard = function(text, successMsg, fallbackUrl) {
+    const execCopy = () => {
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (successful) {
+                if (typeof openAlert === 'function') openAlert(successMsg);
+                else alert(successMsg);
+            } else {
+                if (fallbackUrl) prompt("Sistem memblokir salin otomatis. Silakan salin tautan ini:", fallbackUrl);
+                else alert("Sistem peramban Anda memblokir fitur salin otomatis.");
+            }
+        } catch (err) {
+            if (fallbackUrl) prompt("Sistem memblokir salin otomatis. Silakan salin tautan ini:", fallbackUrl);
+            else alert("Sistem peramban Anda memblokir fitur salin otomatis.");
+        }
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            if (typeof openAlert === 'function') openAlert(successMsg);
+            else alert(successMsg);
+        }).catch(err => execCopy());
+    } else {
+        execCopy();
+    }
+};
+
         window.bukaFormPenilaian = function (surahNo, surahNama) {
                             window.pulihkanCurrentState();
                             const studentId = window.currentState.studentId;
@@ -469,7 +689,7 @@
                             window.currentState.surahNamaEdit = surahNama;
 
                             let ayatInfo = "";
-                            let items = window.getMateriList(kategori);
+                            let items = typeof window.getMateriList === 'function' ? window.getMateriList(kategori) : [];
 
             const surat = items.find(s => String(s.no) === String(surahNo)) || (typeof masterSurat !== 'undefined' ? masterSurat.find(s => String(s.no) === String(surahNo)) : null);
                             if (surat && typeof surat.ayat === 'string' && surat.ayat.includes('-')) {
@@ -477,11 +697,15 @@
                             }
 
                             document.getElementById('modal-title').innerText = `Nilai: ${surahNama}${ayatInfo}`;
-                            const key = `${semester}_${kategori}`;
-                        let pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null);
-                        if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
-                        if (!Array.isArray(pList)) pList = [];
-                            const pesertaName = pList.find(p => p.id === studentId)?.nama || '';
+                            let pesertaName = '';
+                            Object.values(dataPeserta).forEach(list => {
+                                let arr = list;
+                                if (arr && !Array.isArray(arr) && Array.isArray(arr.list)) arr = arr.list;
+                                if (Array.isArray(arr)) {
+                                    const found = arr.find(x => x.id === studentId);
+                                    if (found) pesertaName = found.nama;
+                                }
+                            });
                             document.getElementById('modal-subtitle').innerText = `Siswa: ${pesertaName}`;
 
                             window.renderUjianForm();
@@ -505,7 +729,7 @@
                             const semester = window.currentState.semester;
                             const formContainer = document.querySelector('#modal-penilaian .overflow-y-auto');
 
-                            if (!kat || !studentId || !surahNo || !semester) {
+                            if (!kat || !studentId || !surahNo) {
                                 if (formContainer) formContainer.classList.add('hidden');
                                 return;
                             }
@@ -524,7 +748,7 @@
 
                             if (formContainer) formContainer.classList.remove('hidden');
 
-                            let items = window.getMateriList(kat);
+                            let items = typeof window.getMateriList === 'function' ? window.getMateriList(kat) : [];
 
             const surat = items.find(s => String(s.no) === String(surahNo)) || (typeof masterSurat !== 'undefined' ? masterSurat.find(s => String(s.no) === String(surahNo)) : null);
                             if (surat) window.currentState.surahNamaEdit = surat.nama;
@@ -562,19 +786,11 @@
                             }
                             const inputPenguji = document.getElementById('modal-input-penguji');
                             if (inputPenguji) {
-                                if (typeof currentUser !== 'undefined' && currentUser.role === 'Admin Utama') {
-                                    inputPenguji.value = '';
-                                    inputPenguji.removeAttribute('readonly');
-                                    inputPenguji.classList.remove('bg-gray-200', 'cursor-not-allowed');
-                                    inputPenguji.classList.add('bg-white', 'focus:ring-2', 'focus:ring-primary/20');
-                                    inputPenguji.placeholder = 'Ketik Nama Penguji (Opsional)';
-                                } else {
-                                    inputPenguji.value = typeof currentUser !== 'undefined' ? currentUser.name : '';
-                                    inputPenguji.setAttribute('readonly', 'true');
-                                    inputPenguji.classList.remove('bg-white', 'focus:ring-2', 'focus:ring-primary/20');
-                                    inputPenguji.classList.add('bg-gray-200', 'cursor-not-allowed');
-                                    inputPenguji.placeholder = 'Nama Penguji...';
-                                }
+                                inputPenguji.value = typeof currentUser !== 'undefined' ? currentUser.name : '';
+                                inputPenguji.setAttribute('readonly', 'true');
+                                inputPenguji.classList.remove('bg-white', 'focus:ring-2', 'focus:ring-primary/20');
+                                inputPenguji.classList.add('bg-gray-200', 'cursor-not-allowed');
+                                inputPenguji.placeholder = 'Nama Penguji...';
                             }
 
                             ['area-nilai-standar', 'area-nilai-lembar', 'area-nilai-tartil', 'area-nilai-fashohah', 'area-nilai-ghorib', 'area-nilai-tajwid'].forEach(id => {
@@ -582,7 +798,8 @@
                                 if (el) el.classList.add('hidden');
                             });
 
-                            const existingData = statePenilaian[`${semester}_${studentId}_${surahNo}`];
+                            const stateKey = semester ? `${semester}_${studentId}_${surahNo}` : `${studentId}_${surahNo}`;
+                            const existingData = statePenilaian[stateKey];
                             if (existingData) {
                                 const inputCatatan = document.getElementById('modal-input-catatan');
                                 if (inputCatatan) inputCatatan.value = existingData.catatan || '';
@@ -610,6 +827,37 @@
                                     }
                                 }
 
+                                if (existingData.rincian) {
+                                    if (surahNo === 'M1') {
+                                        if(document.getElementById('score-tajwid')) document.getElementById('score-tajwid').value = existingData.rincian.tajwid || '';
+                                        if(document.getElementById('score-kalimah')) document.getElementById('score-kalimah').value = existingData.rincian.kalimah || '';
+                                        if(document.getElementById('score-kelancaran')) document.getElementById('score-kelancaran').value = existingData.rincian.kelancaran || '';
+                                        if(document.getElementById('score-nafas')) document.getElementById('score-nafas').value = existingData.rincian.nafas || '';
+                                        if(document.getElementById('score-waqf')) document.getElementById('score-waqf').value = existingData.rincian.waqf || '';
+                                    } else if (surahNo === 'M2') {
+                                        if(document.getElementById('score-huruf')) document.getElementById('score-huruf').value = existingData.rincian.huruf || '';
+                                        if(document.getElementById('score-harokah')) document.getElementById('score-harokah').value = existingData.rincian.harokah || '';
+                                        if(document.getElementById('score-sifat')) document.getElementById('score-sifat').value = existingData.rincian.sifat || '';
+                                        if(document.getElementById('score-volume')) document.getElementById('score-volume').value = existingData.rincian.volume || '';
+                                    } else if (surahNo === 'M3') {
+                                        if(document.getElementById('ghorib-s1-kesalahan')) document.getElementById('ghorib-s1-kesalahan').value = existingData.rincian.s1k || '';
+                                        if(document.getElementById('ghorib-s1-nilai')) document.getElementById('ghorib-s1-nilai').value = existingData.rincian.s1n || '';
+                                        if(document.getElementById('ghorib-s2-kesalahan')) document.getElementById('ghorib-s2-kesalahan').value = existingData.rincian.s2k || '';
+                                        if(document.getElementById('ghorib-s2-nilai')) document.getElementById('ghorib-s2-nilai').value = existingData.rincian.s2n || '';
+                                        if(document.getElementById('ghorib-s3-kesalahan')) document.getElementById('ghorib-s3-kesalahan').value = existingData.rincian.s3k || '';
+                                        if(document.getElementById('ghorib-s3-nilai')) document.getElementById('ghorib-s3-nilai').value = existingData.rincian.s3n || '';
+                                        if(document.getElementById('ghorib-e1')) document.getElementById('ghorib-e1').value = existingData.rincian.e1 || '';
+                                        if(document.getElementById('ghorib-e2')) document.getElementById('ghorib-e2').value = existingData.rincian.e2 || '';
+                                        if(document.getElementById('ghorib-e3')) document.getElementById('ghorib-e3').value = existingData.rincian.e3 || '';
+                                        if(document.getElementById('ghorib-e4')) document.getElementById('ghorib-e4').value = existingData.rincian.e4 || '';
+                                    } else if (surahNo === 'M4') {
+                                        for(let i=1; i<=5; i++) {
+                                            if(document.getElementById(`tajwid-t${i}`)) document.getElementById(`tajwid-t${i}`).value = existingData.rincian[`t${i}`] || '';
+                                            if(document.getElementById(`tajwid-u${i}`)) document.getElementById(`tajwid-u${i}`).value = existingData.rincian[`u${i}`] || '';
+                                        }
+                                    }
+                                }
+
                                 if (existingData.history && existingData.history.length > 0 && areaRiwayat && listRiwayat) {
                                     areaRiwayat.classList.remove('hidden');
                                     let historyHtml = '';
@@ -632,6 +880,7 @@
                                 else if (surahNo === 'M2') document.getElementById('area-nilai-fashohah').classList.remove('hidden');
                                 else if (surahNo === 'M3') document.getElementById('area-nilai-ghorib').classList.remove('hidden');
                                 else if (surahNo === 'M4') document.getElementById('area-nilai-tajwid').classList.remove('hidden');
+                                // Jika materi di kategori Tartil BUKAN M1-M4 (misal: Surat Hafalan Juz 30), otomatis gunakan format Standar 1 Nilai
                                 else document.getElementById('area-nilai-standar').classList.remove('hidden');
                             } else if (tipe === 'lembar') {
                                 renderLembarGrid(surahNo);
@@ -656,15 +905,47 @@
                             const tipe = kategoriData.tipe;
 
                             let nilai;
+                            let rincian = null;
                             if (tipe === 'tartil' && ['M1', 'M2', 'M3', 'M4'].includes(surahNoEdit)) {
                                 if (surahNoEdit === 'M1') nilai = parseFloat(document.getElementById('total-tartil-display').innerText);
                                 else if (surahNoEdit === 'M2') nilai = parseFloat(document.getElementById('total-fashohah-display').innerText);
                                 else if (surahNoEdit === 'M3') nilai = parseFloat(document.getElementById('total-ghorib-display').innerText);
                                 else if (surahNoEdit === 'M4') nilai = parseFloat(document.getElementById('total-tajwid-display').innerText);
+                                
+                                rincian = {};
+                                if (surahNoEdit === 'M1') {
+                                    rincian.tajwid = document.getElementById('score-tajwid')?.value || '';
+                                    rincian.kalimah = document.getElementById('score-kalimah')?.value || '';
+                                    rincian.kelancaran = document.getElementById('score-kelancaran')?.value || '';
+                                    rincian.nafas = document.getElementById('score-nafas')?.value || '';
+                                    rincian.waqf = document.getElementById('score-waqf')?.value || '';
+                                } else if (surahNoEdit === 'M2') {
+                                    rincian.huruf = document.getElementById('score-huruf')?.value || '';
+                                    rincian.harokah = document.getElementById('score-harokah')?.value || '';
+                                    rincian.sifat = document.getElementById('score-sifat')?.value || '';
+                                    rincian.volume = document.getElementById('score-volume')?.value || '';
+                                } else if (surahNoEdit === 'M3') {
+                                    rincian.s1k = document.getElementById('ghorib-s1-kesalahan')?.value || '';
+                                    rincian.s1n = document.getElementById('ghorib-s1-nilai')?.value || '';
+                                    rincian.s2k = document.getElementById('ghorib-s2-kesalahan')?.value || '';
+                                    rincian.s2n = document.getElementById('ghorib-s2-nilai')?.value || '';
+                                    rincian.s3k = document.getElementById('ghorib-s3-kesalahan')?.value || '';
+                                    rincian.s3n = document.getElementById('ghorib-s3-nilai')?.value || '';
+                                    rincian.e1 = document.getElementById('ghorib-e1')?.value || '';
+                                    rincian.e2 = document.getElementById('ghorib-e2')?.value || '';
+                                    rincian.e3 = document.getElementById('ghorib-e3')?.value || '';
+                                    rincian.e4 = document.getElementById('ghorib-e4')?.value || '';
+                                } else if (surahNoEdit === 'M4') {
+                                    for(let i=1; i<=5; i++) {
+                                        rincian[`t${i}`] = document.getElementById(`tajwid-t${i}`)?.value || '';
+                                        rincian[`u${i}`] = document.getElementById(`tajwid-u${i}`)?.value || '';
+                                    }
+                                }
                             } else if (tipe === 'lembar') {
                                 const selectedRadio = document.querySelector('input[name="nilai-lembar"]:checked');
                                 nilai = selectedRadio ? parseFloat(selectedRadio.value) : undefined;
                             } else {
+                                // Menangkap dan menyimpan nilai untuk materi berformat Standar di dalam Kategori Tartil
                                 const selectedRadio = document.querySelector('input[name="nilai-standar"]:checked');
                                 nilai = selectedRadio ? parseFloat(selectedRadio.value) : undefined;
                             }
@@ -679,7 +960,8 @@
                                 return;
                             }
 
-                            const existingData = statePenilaian[`${semester}_${studentId}_${surahNoEdit}`];
+                            const stateKey = semester ? `${semester}_${studentId}_${surahNoEdit}` : `${studentId}_${surahNoEdit}`;
+                            const existingData = statePenilaian[stateKey];
                             let history = existingData && existingData.history ? existingData.history : [];
 
                             if (existingData && existingData.nilai !== undefined) {
@@ -692,22 +974,29 @@
                                 }
                             }
 
-                            const stateKey = `${semester}_${studentId}_${surahNoEdit}`;
                             statePenilaian[stateKey] = {
                                 nilai: nilai,
                                 penguji: penguji,
                                 catatan: catatan,
                                 history: history
                             };
+                            if (rincian) {
+                                statePenilaian[stateKey].rincian = rincian;
+                            }
                             
                             window.sessionUpdatedMaterials = window.sessionUpdatedMaterials || new Set();
                             window.sessionUpdatedMaterials.add(stateKey);
 
-                            const key = `${semester}_${kategori}`;
-                        let pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null);
-                        if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
-                        if (!Array.isArray(pList)) pList = [];
-                            const peserta = pList.find(p => p.id === studentId) || null;
+                            let peserta = null;
+                            Object.values(dataPeserta).forEach(list => {
+                                let arr = list;
+                                if (arr && !Array.isArray(arr) && Array.isArray(arr.list)) arr = arr.list;
+                                if (Array.isArray(arr)) {
+                                    const found = arr.find(x => x.id === studentId);
+                                    if (found) peserta = found;
+                                }
+                            });
+
                             if (peserta) {
                                 if (typeof window.activityLog === 'undefined') window.activityLog = [];
                                 window.activityLog.unshift({
@@ -770,12 +1059,12 @@
             const semester = window.currentState.semester;
             const surahNoEdit = typeof window.currentState !== 'undefined' ? window.currentState.surahNoEdit : null;
             
-            if (!studentId || !surahNoEdit || !semester) return;
+            if (!studentId || !surahNoEdit) return;
 
             const proceed = () => {
-                const key = `${semester}_${studentId}_${surahNoEdit}`;
+                const key = semester ? `${semester}_${studentId}_${surahNoEdit}` : `${studentId}_${surahNoEdit}`;
                 // Kunci lembar juga harus menyertakan semester
-                const lembarKey = `${semester}_${studentId}_${surahNoEdit}_lembar`;
+                const lembarKey = semester ? `${semester}_${studentId}_${surahNoEdit}_lembar` : `${studentId}_${surahNoEdit}_lembar`;
                 
                 if (window.sessionUpdatedMaterials) window.sessionUpdatedMaterials.delete(key);
                 
@@ -811,9 +1100,8 @@
 
     window.hapusNilaiLangsung = function(studentId, surahNo, semester) {
         const proceed = () => {
-            if (!semester) { openAlert("Kesalahan: Semester tidak terdefinisi."); return; }
-            const key = `${semester}_${studentId}_${surahNo}`;
-            const lembarKey = `${semester}_${studentId}_${surahNo}_lembar`;
+            const key = semester ? `${semester}_${studentId}_${surahNo}` : `${studentId}_${surahNo}`;
+            const lembarKey = semester ? `${semester}_${studentId}_${surahNo}_lembar` : `${studentId}_${surahNo}_lembar`;
             
             if (window.sessionUpdatedMaterials) window.sessionUpdatedMaterials.delete(key);
             
@@ -850,13 +1138,19 @@
             if (typeof openAlert === 'function') openAlert("Hanya Admin Utama yang dapat mengakses fitur ini.");
             return;
         }
+        if (!window.selectedUjianPeserta || window.selectedUjianPeserta.length === 0) {
+            if (typeof openAlert === 'function') openAlert("Pilih minimal satu siswa peserta ujian terlebih dahulu.");
+            return;
+        }
         const modal = document.getElementById('modal-nilai-massal');
         if (modal) modal.classList.replace('hidden', 'flex');
 
+        window.pulihkanCurrentState();
+        const activeKategori = window.currentState.kategori;
+
         const selectKat = document.getElementById('nilai-massal-kategori');
         if (selectKat) {
-            selectKat.innerHTML = '<option value="">Pilih Kategori...</option>' + 
-                listKategori.map(k => `<option value="${k.nama}">${k.nama}</option>`).join('');
+            selectKat.innerHTML = `<option value="${activeKategori}" selected>${activeKategori}</option>`;
         }
         const selectMat = document.getElementById('nilai-massal-materi');
         if (selectMat) selectMat.innerHTML = '<option value="">Pilih Kategori Dahulu...</option>';
@@ -866,11 +1160,19 @@
         
         const stats = document.getElementById('nilai-massal-stats');
         if (stats) stats.innerText = '0 Peserta';
+
+        window.onChangeKategoriMassal(); // Auto-trigger populate
     };
 
     window.tutupModalNilaiMassal = function() {
         const modal = document.getElementById('modal-nilai-massal');
         if (modal) modal.classList.replace('flex', 'hidden');
+        
+        const txtArea = document.getElementById('import-nilai-textarea');
+        if (txtArea) txtArea.value = '';
+        
+        // Kembalikan ke tab manual jika ditutup
+        if (typeof window.switchTabNilaiMassal === 'function') window.switchTabNilaiMassal('manual');
     };
 
     window.onChangeKategoriMassal = function() {
@@ -884,7 +1186,7 @@
             return;
         }
         
-        const items = window.getMateriList(kat);
+        const items = typeof window.getMateriList === 'function' ? window.getMateriList(kat) : [];
         if (selectMat) {
             selectMat.innerHTML = items.map(m => `<option value="${m.no}">${m.nama}</option>`).join('');
         }
@@ -910,12 +1212,30 @@
             return;
         }
         
-        const key = `${semester}_${kat}`;
         let pList = [];
         if (typeof dataPeserta !== 'undefined') {
-        pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null);
-        if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
-        if (!Array.isArray(pList)) pList = [];
+            Object.keys(dataPeserta).forEach(key => {
+                let studentDocSemester = null;
+                let katKey = key;
+                if (key.includes('_')) {
+                    const firstUnderscore = key.indexOf('_');
+                    studentDocSemester = key.substring(0, firstUnderscore);
+                    katKey = key.substring(firstUnderscore + 1);
+                }
+                
+                if (studentDocSemester && studentDocSemester !== semester) return;
+                
+                if (katKey === kat) {
+                    let list = dataPeserta[key];
+                    if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+                    if (Array.isArray(list)) pList = pList.concat(list);
+                }
+            });
+        }
+        
+        if (Array.isArray(pList)) {
+            // Filter hanya menampilkan peserta yang dicentang di halaman ujian
+            pList = pList.filter(p => window.selectedUjianPeserta.includes(p.id));
         }
         
         if (pList.length === 0) {
@@ -939,7 +1259,7 @@
         `;
 
         selectedMatNos.forEach(matNo => {
-            const materiObj = window.getMateriList(kat).find(m => String(m.no) === String(matNo));
+            const materiObj = (typeof window.getMateriList === 'function' ? window.getMateriList(kat) : []).find(m => String(m.no) === String(matNo));
             const matNama = materiObj ? materiObj.nama : matNo;
             html += `<th class="px-4 py-3 font-bold text-teal-950 min-w-[110px] text-center border-r border-gray-100">${matNama} <br><span class="text-[9px] text-gray-400 font-normal">(0-10)</span></th>`;
         });
@@ -995,7 +1315,7 @@
         const waktu = new Date().toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         const waktuLog = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         
-        const items = window.getMateriList(kat);
+        const items = typeof window.getMateriList === 'function' ? window.getMateriList(kat) : [];
 
         inputs.forEach(input => {
             const val = input.value.trim();
@@ -1037,7 +1357,7 @@
                         if (materiObj) matNama = materiObj.nama;
 
                         const keyList = `${semester}_${kat}`;
-                    let pList = dataPeserta[keyList] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null);
+                    let pList = dataPeserta[keyList] || dataPeserta[kat];
                     if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
                     if (!Array.isArray(pList)) pList = [];
                         const p = pList.find(x => x.id === studentId);
@@ -1074,6 +1394,142 @@
         }).catch(err => {
             if (typeof openAlert === 'function') openAlert("Gagal menyimpan nilai massal: " + err.message);
             console.error("Massal error:", err);
+        });
+    };
+
+    window.switchTabNilaiMassal = function(mode) {
+        const manualTab = document.getElementById('tab-nilai-manual');
+        const importTab = document.getElementById('tab-nilai-import');
+        const manualForm = document.getElementById('form-nilai-manual');
+        const importForm = document.getElementById('form-nilai-import');
+        const btnSimpan = document.getElementById('btn-simpan-nilai-massal');
+        const btnImport = document.getElementById('btn-import-nilai-massal');
+
+        if (mode === 'manual') {
+            manualTab.className = "flex-1 py-3 text-sm font-bold text-primary border-b-2 border-primary bg-primary/5 transition-colors";
+            importTab.className = "flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent hover:bg-gray-50 transition-colors";
+            manualForm.classList.remove('hidden');
+            importForm.classList.add('hidden');
+            if (btnSimpan) btnSimpan.classList.remove('hidden');
+            if (btnImport) btnImport.classList.add('hidden');
+        } else {
+            importTab.className = "flex-1 py-3 text-sm font-bold text-primary border-b-2 border-primary bg-primary/5 transition-colors";
+            manualTab.className = "flex-1 py-3 text-sm font-bold text-gray-500 border-b-2 border-transparent hover:bg-gray-50 transition-colors";
+            importForm.classList.remove('hidden');
+            manualForm.classList.add('hidden');
+            if (btnSimpan) btnSimpan.classList.add('hidden');
+            if (btnImport) btnImport.classList.remove('hidden');
+        }
+    };
+
+    window.imporNilaiMassal = function() {
+        window.pulihkanCurrentState();
+        const semester = window.currentState.semester;
+        const kat = document.getElementById('nilai-massal-kategori').value;
+        const matSelect = document.getElementById('nilai-massal-materi');
+        const selectedMatNos = Array.from(matSelect.selectedOptions).map(opt => opt.value).filter(v => v);
+        const textData = document.getElementById('import-nilai-textarea').value.trim();
+
+        if (!semester || !kat || selectedMatNos.length === 0) {
+            if (typeof openAlert === 'function') openAlert("Pastikan kategori dan materi telah dipilih.");
+            return;
+        }
+
+        if (!textData) {
+            if (typeof openAlert === 'function') openAlert("Data impor tidak boleh kosong. Silakan salin dan tempel data dari Excel.");
+            return;
+        }
+
+        const rows = textData.split('\n');
+        const batch = db.batch();
+        let updatesCount = 0;
+        const penguji = (typeof currentUser !== 'undefined' && currentUser.role === 'Admin Utama') ? '' : (typeof currentUser !== 'undefined' ? currentUser.name : 'Admin');
+        const waktu = new Date().toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const waktuLog = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const items = typeof window.getMateriList === 'function' ? window.getMateriList(kat) : [];
+        
+        const keyList = `${semester}_${kat}`;
+        let pList = dataPeserta[keyList] || dataPeserta[kat];
+        if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
+        if (!Array.isArray(pList)) pList = [];
+
+        let errorRows = [];
+
+        rows.forEach((row, rIndex) => {
+            if (!row.trim()) return;
+            const cols = row.split('\t').map(c => c.trim());
+            if (cols.length < 2) return;
+
+            const studentName = cols[0];
+            const p = pList.find(x => x.nama.toLowerCase() === studentName.toLowerCase());
+            
+            if (!p) {
+                errorRows.push(`Baris ${rIndex + 1}: Nama '${studentName}' tidak ditemukan di kategori ini.`);
+                return;
+            }
+
+            selectedMatNos.forEach((matNo, mIndex) => {
+                if (mIndex + 1 < cols.length) {
+                    const valStr = cols[mIndex + 1].replace(',', '.'); // Toleransi penulisan koma sebagai koma desimal
+                    if (valStr === '' || valStr === '-') return;
+
+                    const nilaiFloat = parseFloat(valStr);
+                    if (!isNaN(nilaiFloat) && nilaiFloat >= 0 && nilaiFloat <= 10) {
+                        const stateKey = `${semester}_${p.id}_${matNo}`;
+                        const existingData = statePenilaian[stateKey] || {};
+                        
+                        let history = existingData.history ? [...existingData.history] : [];
+                        
+                        if (existingData.nilai !== undefined && (existingData.nilai !== nilaiFloat || existingData.penguji !== penguji)) {
+                            history.unshift({ nilai: existingData.nilai, penguji: existingData.penguji || '-', waktu: waktu });
+                        }
+                        
+                        if (existingData.nilai !== nilaiFloat) {
+                            statePenilaian[stateKey] = { nilai: nilaiFloat, penguji: penguji, catatan: existingData.catatan || '', history: history };
+                            
+                            window.sessionUpdatedMaterials = window.sessionUpdatedMaterials || new Set();
+                            window.sessionUpdatedMaterials.add(stateKey);
+                            
+                            batch.set(db.collection('statePenilaian').doc(stateKey), statePenilaian[stateKey]);
+                            updatesCount++;
+                            
+                            let matNama = matNo;
+                            const materiObj = items.find(m => String(m.no) === String(matNo));
+                            if (materiObj) matNama = materiObj.nama;
+
+                            if (typeof window.activityLog === 'undefined') window.activityLog = [];
+                            window.activityLog.unshift({ type: 'penilaian', waktu: waktuLog, data: { nama: p.nama, materi: matNama, nilai: nilaiFloat, penguji: penguji ? penguji + " (Impor Excel)" : "Admin (Impor Excel)" } });
+                        }
+                    }
+                }
+            });
+        });
+
+        if (updatesCount === 0) {
+            const errMsg = errorRows.length > 0 ? "Beberapa baris ditolak:\n" + errorRows.slice(0,5).join('\n') : "Tidak ada nilai valid yang bisa disimpan (pastikan Nama benar dan format angka 0-10).";
+            if (typeof openAlert === 'function') openAlert(errMsg);
+            return;
+        }
+
+        if (typeof window.activityLog !== 'undefined' && window.activityLog.length > 20) window.activityLog = window.activityLog.slice(0, 20);
+        batch.set(db.collection('appData').doc('activityLog'), { log: typeof window.activityLog !== 'undefined' ? window.activityLog : [] }, { merge: true });
+
+        batch.commit().then(() => {
+            if (typeof window.saveLocalState === 'function') window.saveLocalState();
+            
+            let successMsg = `Berhasil mengimpor ${updatesCount} nilai baru/diubah.`;
+            if (errorRows.length > 0) {
+                successMsg += `\n\n(Abaikan jika disengaja) Ada ${errorRows.length} baris tidak terbaca/Nama salah.`;
+            }
+            
+            if (typeof openAlert === 'function') openAlert(successMsg);
+            window.tutupModalNilaiMassal();
+            
+            if (typeof window.filterUjianPeserta === 'function' && document.getElementById('view-ujian') && !document.getElementById('view-ujian').classList.contains('hidden')) {
+                window.filterUjianPeserta();
+            }
+        }).catch(err => {
+            if (typeof openAlert === 'function') openAlert("Gagal mengimpor nilai: " + err.message);
         });
     };
 
@@ -1130,11 +1586,17 @@
                     
                     let needsRender = false;
 
-                    const key = `${semester}_${kategori}`;
-                let pList = (typeof dataPeserta !== 'undefined') ? (dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null)) : null;
-                if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
-                if (!Array.isArray(pList)) pList = [];
-                    const p = pList.find(x => x.id === studentId);
+                    let p = null;
+                    if (typeof dataPeserta !== 'undefined') {
+                        Object.values(dataPeserta).forEach(list => {
+                            let arr = list;
+                            if (arr && !Array.isArray(arr) && Array.isArray(arr.list)) arr = arr.list;
+                            if (Array.isArray(arr)) {
+                                const found = arr.find(x => x.id === studentId);
+                                if (found) p = found;
+                            }
+                        });
+                    }
 
                     if (header && header.innerHTML.trim() === '') {
                         needsRender = true;
@@ -1167,17 +1629,19 @@
                     const kategori = window.currentState.kategori;
                     const semester = window.currentState.semester;
                     
-                    if (kategori && semester && typeof dataPeserta !== 'undefined') {
-                        const key = `${semester}_${kategori}`;
-                        const currentCount = (dataPeserta[key] || dataPeserta[kategori] || []).length;
-                        const container = document.getElementById('container-peserta-ujian');
+                    if (kategori && typeof dataPeserta !== 'undefined') {
+                        let currentCategoryCount = 0;
+                        const key = semester ? `${semester}_${kategori}` : kategori;
+                        let targetList = dataPeserta[key] || dataPeserta[kategori];
                         
-                        // Render ulang jika jumlah data yang dimuat berubah atau jika masih bertuliskan tidak ditemukan padahal datanya ada
-                        if (currentCount !== lastPesertaCount && currentCount > 0) {
-                            lastPesertaCount = currentCount;
+                        if (targetList && !Array.isArray(targetList) && Array.isArray(targetList.list)) targetList = targetList.list;
+                        if (Array.isArray(targetList)) currentCategoryCount = targetList.length;
+                        
+                        if (lastPesertaCount !== -1 && currentCategoryCount !== lastPesertaCount) {
+                            lastPesertaCount = currentCategoryCount;
                             triggerRender();
-                        } else if (container && container.innerText.includes('Peserta Tidak Ditemukan') && currentCount > 0) {
-                            triggerRender();
+                        } else if (lastPesertaCount === -1) {
+                            lastPesertaCount = currentCategoryCount;
                         }
                     }
                 }

@@ -47,8 +47,11 @@ function getStatusPeserta(studentId, kategori) {
 
 function getLaporanData() {
     let allStudents = [];
-    Object.keys(dataPeserta).forEach(kategori => {
-        dataPeserta[kategori].forEach(peserta => {
+    if (typeof listKategori === 'undefined') return [];
+    listKategori.forEach(k => {
+        const kategori = k.nama;
+        if (dataPeserta[kategori]) {
+            dataPeserta[kategori].forEach(peserta => {
             const status = getStatusPeserta(peserta.id, kategori);
             let totalNilai = 0;
             let jumlahPenilaian = 0;
@@ -79,6 +82,7 @@ function getLaporanData() {
                 jumlahPenilaian
             });
         });
+        }
     });
     return allStudents;
 }

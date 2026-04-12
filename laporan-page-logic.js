@@ -931,6 +931,41 @@ function bukaPenilaianDariProfil() {
     }, 100);
 }
 
+window.salinTeksKeClipboard = function(text, successMsg, fallbackUrl) {
+    const execCopy = () => {
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (successful) {
+                if (typeof openAlert === 'function') openAlert(successMsg);
+                else alert(successMsg);
+            } else {
+                if (fallbackUrl) prompt("Sistem memblokir salin otomatis. Silakan salin tautan ini:", fallbackUrl);
+                else alert("Sistem peramban Anda memblokir fitur salin otomatis.");
+            }
+        } catch (err) {
+            if (fallbackUrl) prompt("Sistem memblokir salin otomatis. Silakan salin tautan ini:", fallbackUrl);
+            else alert("Sistem peramban Anda memblokir fitur salin otomatis.");
+        }
+    };
+
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            if (typeof openAlert === 'function') openAlert(successMsg);
+            else alert(successMsg);
+        }).catch(err => execCopy());
+    } else {
+        execCopy();
+    }
+};
+
 window.bagikanHasil = function(id, kat) {
     window.pulihkanCurrentState();
     const semester = window.currentState.semester;
@@ -942,15 +977,8 @@ window.bagikanHasil = function(id, kat) {
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
     const shareUrl = `${baseUrl}hasil.html?id=${encodeURIComponent(id)}&kat=${encodeURIComponent(kat)}&sem=${encodeURIComponent(semester)}`;
     
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-            if (typeof openAlert === 'function') openAlert("Tautan hasil ujian berhasil disalin ke clipboard!\n\nAnda dapat membagikannya kepada siswa/orang tua.\n\n" + shareUrl);
-        }).catch(err => {
-            prompt("Gagal menyalin otomatis. Silakan salin tautan berikut secara manual:", shareUrl);
-        });
-    } else {
-        prompt("Silakan salin tautan hasil ujian berikut untuk dibagikan:", shareUrl);
-    }
+    const successMsg = "Tautan hasil ujian berhasil disalin ke clipboard!";
+    window.salinTeksKeClipboard(shareUrl, successMsg, shareUrl);
 };
 
 window.bagikanHasilMassal = function() {
@@ -974,23 +1002,16 @@ window.bagikanHasilMassal = function() {
     if (targetPeserta.length === 0) return;
 
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
-    let textToCopy = `Assalamu'alaikum Wr. Wb.\nBerikut adalah tautan hasil ujian Munaqosyah (Semester ${semester}):\n\n`;
+    let textToCopy = "";
 
     targetPeserta.forEach((p, index) => {
         const shareUrl = `${baseUrl}hasil.html?id=${encodeURIComponent(p.id)}&kat=${encodeURIComponent(p.kategori)}&sem=${encodeURIComponent(semester)}`;
-        textToCopy += `${index + 1}. ${p.nama} (${p.kategori})\n   Link: ${shareUrl}\n\n`;
+        textToCopy += `${p.nama}: ${shareUrl}\n`;
     });
 
-    textToCopy += `Terima kasih.`;
+    textToCopy = textToCopy.trim();
 
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            if (typeof openAlert === 'function') openAlert(`Berhasil menyalin ${targetPeserta.length} tautan hasil ujian ke papan klip!\n\nAnda dapat langsung menempelkannya (paste) ke grup WhatsApp atau pesan pribadi.`);
-            batalPilihSemuaLaporan();
-        }).catch(err => {
-            prompt("Gagal menyalin otomatis. Silakan salin teks berikut secara manual:", textToCopy);
-        });
-    } else {
-        prompt("Silakan salin teks berikut secara manual untuk dibagikan:", textToCopy);
-    }
+    const successMsg = `Berhasil menyalin ${targetPeserta.length} tautan hasil ujian ke papan klip!`;
+    window.salinTeksKeClipboard(textToCopy, successMsg, "");
+    if (typeof batalPilihSemuaLaporan === 'function') batalPilihSemuaLaporan();
 };

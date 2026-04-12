@@ -25,6 +25,7 @@ let listKategori = [
 ];
  
 let listKelas = ["7 A", "8 B"];
+let listPembimbing = [];
 
 // --- MOCK DATA PESERTA ---
 let dataPeserta = {

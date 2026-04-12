@@ -66,9 +66,9 @@ function refreshRealtimeUI() {
     if (activeView === 'dashboard') {
         renderDashboard();
     } else if (activeView === 'peserta') {
-        updateBulkActionBar();
-        updateQuickStats();
-        renderTablePeserta();
+        if (typeof updateBulkActionBar === 'function') updateBulkActionBar();
+        if (typeof window.updateQuickStats === 'function') window.updateQuickStats();
+        if (typeof window.renderTablePeserta === 'function') window.renderTablePeserta();
     } else if (activeView === 'ujian') {
                 if (typeof window.filterUjianPeserta === 'function') {
                     window.filterUjianPeserta();
@@ -162,10 +162,9 @@ function switchView(viewName, studentId = null, kategori = null, forceRender = f
             if (viewName === 'peserta') {
                 pesertaPagination.currentPage = 1;
                 if (document.getElementById('search-peserta')) document.getElementById('search-peserta').value = '';
-                selectedPeserta = [];
-                updateBulkActionBar();
-                renderTablePeserta();
-                updateQuickStats();
+                if (typeof updateBulkActionBar === 'function') updateBulkActionBar();
+                if (typeof window.renderTablePeserta === 'function') window.renderTablePeserta();
+                if (typeof window.updateQuickStats === 'function') window.updateQuickStats();
             }
             else if (viewName === 'dashboard') { renderDashboard(); }
             else if (viewName === 'ujian') {

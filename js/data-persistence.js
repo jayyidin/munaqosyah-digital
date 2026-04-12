@@ -7,6 +7,7 @@ window.saveLocalState = function() {
         listKategori: typeof listKategori !== 'undefined' ? listKategori : [],
         activityLog: typeof activityLog !== 'undefined' ? activityLog : [],
         listKelas: typeof listKelas !== 'undefined' ? listKelas : [],
+        listPembimbing: typeof listPembimbing !== 'undefined' ? listPembimbing : [],
         dataSurat: typeof dataSurat !== 'undefined' ? dataSurat : {}
     };
     localStorage.setItem('munaqosyahState', JSON.stringify(appState));
@@ -17,6 +18,7 @@ function seedInitialData() {
     db.collection('appData').doc('masterData').set({
         listKategori: typeof listKategori !== 'undefined' ? listKategori : [],
         listKelas: typeof listKelas !== 'undefined' ? listKelas : [],
+        listPembimbing: typeof listPembimbing !== 'undefined' ? listPembimbing : [],
         dataSurat: typeof dataSurat !== 'undefined' ? dataSurat : {}
     }, { merge: true });
 
@@ -72,6 +74,7 @@ function loadState() {
                 if (appState.listKategori) listKategori = appState.listKategori;
                 if (appState.activityLog) activityLog = appState.activityLog;
                 if (appState.listKelas) listKelas = appState.listKelas;
+                if (appState.listPembimbing) listPembimbing = appState.listPembimbing;
                 if (appState.dataSurat) dataSurat = appState.dataSurat;
             } catch(err) {}
         }
@@ -85,6 +88,7 @@ function loadState() {
                     const data = doc.data();
                     if(data.listKategori) listKategori = data.listKategori;
                     if(data.listKelas) listKelas = data.listKelas;
+                    if(data.listPembimbing) listPembimbing = data.listPembimbing;
                     if(data.dataSurat) dataSurat = data.dataSurat;
                 } else {
                     seedInitialData();
@@ -94,10 +98,66 @@ function loadState() {
 
             // 2. Dengarkan Data Peserta
             db.collection('dataPeserta').onSnapshot(snapshot => {
-                dataPeserta = {};
+                // Gunakan mutasi agar referensi memori global tidak terputus (Terhubung erat ke Tabel)
+                for (let key in dataPeserta) {
+                    if (dataPeserta.hasOwnProperty(key)) delete dataPeserta[key];
+                }
                 snapshot.forEach(doc => {
-                    dataPeserta[doc.id] = doc.data().list || [];
+                    const d = doc.data();
+                    
+                    // Rombak: Ekstrak secara pintar namun terstruktur agar dataPeserta muncul lagi
+                    let rawList = [];
+                    if (Array.isArray(d)) {
+                        rawList = d;
+                    } else if (d && Array.isArray(d.list)) {
+                        rawList = d.list;
+                    } else if (d && typeof d === 'object') {
+                        Object.values(d).forEach(val => {
+                            if (Array.isArray(val)) rawList = rawList.concat(val);
+                        });
+                    }
+                    
+                    const uniqueList = [];
+                    const seen = new Set();
+                    let hasDuplicates = false;
+                    rawList.forEach((s, idx) => {
+                        if (!s || typeof s !== 'object' || !s.nama) return;
+                        if (!s.id) s.id = `FIX-${Math.random().toString(36).substring(2, 9)}`;
+                        
+                        if (!seen.has(s.id)) {
+                            seen.add(s.id);
+                            uniqueList.push(s);
+                        } else {
+                            s.id = s.id + "-DUP-" + idx;
+                            seen.add(s.id);
+                            uniqueList.push(s);
+                            hasDuplicates = true;
+                        }
+                    });
+                    
+                    dataPeserta[doc.id] = uniqueList;
+                    
+                    // Auto-heal struktur database di cloud jika formatnya salah / banyak duplikat
+                    if (hasDuplicates || !d || !Array.isArray(d.list)) {
+                        console.warn(`[Auto-Heal] Merombak struktur database untuk ${doc.id}`);
+                        db.collection('dataPeserta').doc(doc.id).set({ list: uniqueList });
+                    }
                 });
+                if (window.isAppInitialized) {
+                if (typeof window.renderTablePeserta === 'function' && document.getElementById('view-peserta') && !document.getElementById('view-peserta').classList.contains('hidden')) {
+                    window.renderTablePeserta();
+                    if (typeof window.updateQuickStats === 'function') window.updateQuickStats();
+                    }
+                    if (typeof renderDashboard === 'function' && document.getElementById('view-dashboard') && !document.getElementById('view-dashboard').classList.contains('hidden')) {
+                        renderDashboard();
+                    }
+                    if (typeof window.filterUjianPeserta === 'function' && document.getElementById('view-ujian') && !document.getElementById('view-ujian').classList.contains('hidden')) {
+                        window.filterUjianPeserta();
+                    }
+                    if (typeof renderLaporanPage === 'function' && document.getElementById('view-laporan') && !document.getElementById('view-laporan').classList.contains('hidden')) {
+                        renderLaporanPage();
+                    }
+                }
                 checkInit(loader);
             }, handleSnapshotError);
 

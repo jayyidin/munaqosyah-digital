@@ -21,6 +21,7 @@ const scriptsToLoad = [
     "js/new-dashboard-logic.js",
     "js/assessment.js", // Defines functions called by initializeAppUI
     "js/management-utility-functions.js", // Defines functions called by initializeAppUI
+    "js/pembimbing-management.js",
     "js/end-token-pendaftaran-penguji-management.js", // Might be used by other logic
     "js/data-persistence.js", // Harus dimuat sebelum initialization karena menyediakan loadSettings dan loadState
     "js/initialization.js" // Defines initializeAppUI and startApp

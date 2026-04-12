@@ -5,228 +5,306 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hasil Ujian Munaqosyah</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <script id="tailwind-config">
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { primary: "#004b50", secondary: "#cfe6f2" },
-                    fontFamily: { headline: ["Manrope", "sans-serif"], body: ["Inter", "sans-serif"] }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f2f4f4; }
-        h1, h2, h3, h4 { font-family: 'Manrope', sans-serif; }
-    </style>
-
-    <!-- Firebase SDK -->
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
-    <!-- Load Configurations & Master Data -->
-    <script src="js/firebase-config.js"></script>
-    <script src="data.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+
+        /* Penyesuaian untuk Cetak 1 Halaman A4 */
+        @media print {
+            @page { size: A4 portrait; margin: 10mm; }
+            body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            /* Reset wadah utama */
+            #main-content { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+            .pb-10 { padding-bottom: 0 !important; }
+            
+            /* Sembunyikan tombol cetak */
+            button, .mt-10 { display: none !important; }
+            
+            /* Rapatkan jarak antar elemen */
+            .pt-8 { padding-top: 0 !important; }
+            .mb-8 { margin-bottom: 12px !important; }
+            .mb-6 { margin-bottom: 12px !important; }
+            .p-6, .sm\:p-8 { padding: 12px !important; }
+            .mt-8 { margin-top: 12px !important; }
+            .pt-6 { padding-top: 12px !important; }
+            .gap-6 { gap: 12px !important; }
+            
+            /* Perkecil teks dan profil */
+            h1 { font-size: 1.5rem !important; }
+            h2 { font-size: 1.2rem !important; }
+            #app-logo { height: 60px !important; margin-bottom: 8px !important; }
+            .w-24, .h-24 { width: 50px !important; height: 50px !important; font-size: 1.25rem !important; }
+            
+            /* Grid responsif untuk rincian materi (otomatis membelah kolom jika materi banyak) */
+            #scores-list {
+                display: grid !important;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+                gap: 8px !important;
+            }
+            
+            /* Hilangkan jarak space-y-3 bawaan Tailwind */
+            #scores-list > div {
+                margin-top: 0 !important;
+                padding: 6px 12px !important;
+                page-break-inside: avoid;
+            }
+            .w-14 { width: 40px !important; }
+            .h-10 { height: 32px !important; font-size: 0.9rem !important; }
+        }
+    </style>
 </head>
-<body class="text-gray-800 p-4 md:p-8 min-h-screen flex flex-col justify-center">
-    <div class="max-w-3xl w-full mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 my-auto">
-        
-        <!-- Header Aplikasi -->
-        <div class="bg-primary p-6 text-white text-center shadow-inner relative overflow-hidden flex flex-col items-center justify-center">
-            <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-            <div class="w-16 h-16 bg-white/10 p-2 rounded-xl mb-3 hidden items-center justify-center backdrop-blur-sm shadow-inner" id="app-logo-container">
-                <img id="app-logo-display" src="" alt="Logo Aplikasi" class="w-full h-full object-contain drop-shadow-md">
-            </div>
-            <h1 class="text-2xl font-extrabold tracking-tight" id="app-name-display">Hasil Ujian Munaqosyah</h1>
-            <p class="text-teal-100 mt-1 text-sm font-medium" id="school-name-display">Memuat data institusi...</p>
+<body class="text-slate-800 pb-10">
+    <div id="loading" class="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-teal-900 font-medium">Memuat Hasil Ujian...</p>
+    </div>
+
+    <div class="max-w-2xl mx-auto pt-8 px-4 sm:px-6 hidden" id="main-content">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <img id="app-logo" src="" alt="Logo Instansi" class="h-16 sm:h-20 w-auto mx-auto mb-4 hidden object-contain">
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-teal-950 font-headline" id="app-title">Hasil Ujian Munaqosyah</h1>
+            <p class="text-gray-500 mt-1 font-medium" id="school-name"></p>
         </div>
-        
-        <div class="p-6 md:p-8" id="content-container">
+
+        <!-- Student Card -->
+        <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 mb-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-bl-full -z-0"></div>
             
-            <!-- Tampilan Menunggu Data -->
-            <div class="text-center py-12" id="loading-state">
-                <div class="w-12 h-12 border-4 border-t-primary border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
-                <p class="text-gray-500 font-medium animate-pulse">Mengambil data dari server...</p>
-            </div>
-            
-            <!-- Tampilan Data Hasil Ujian -->
-            <div id="result-state" class="hidden space-y-8 animate-[fadeIn_0.5s_ease-out]">
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
+                <div class="w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold shadow-inner shrink-0" id="student-avatar"></div>
                 
-                <!-- Pesan Status Kelulusan -->
-                <div id="status-message-container" class="hidden"></div>
-
-                <!-- Info Siswa -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-5 rounded-2xl border border-gray-200">
-                    <div>
-                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Nama Siswa</p>
-                        <p class="text-xl font-extrabold text-primary leading-tight" id="student-name">-</p>
-                        <p class="text-xs text-gray-500 font-semibold mt-1" id="student-id">-</p>
-                    </div>
-                    <div class="flex flex-col justify-center">
-                        <div class="flex gap-2 items-center mb-1">
-                            <span class="text-xs font-bold text-gray-600 w-16">Kategori:</span>
-                            <span class="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded border border-primary/20" id="student-category">-</span>
-                        </div>
-                        <div class="flex gap-2 items-center mb-1">
-                            <span class="text-xs font-bold text-gray-600 w-16">Kelas:</span>
-                            <span class="text-xs font-bold text-gray-800" id="student-class">-</span>
-                        </div>
-                        <div class="flex gap-2 items-center">
-                            <span class="text-xs font-bold text-gray-600 w-16">Semester:</span>
-                            <span class="text-xs font-bold text-gray-800" id="student-semester">-</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Skor Rata-rata -->
-                <div class="flex gap-4 justify-around text-center border-y border-gray-100 py-6">
-                    <div>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Rata-rata Nilai</p>
-                        <p class="text-4xl font-black text-primary" id="student-avg">0.0</p>
-                    </div>
-                    <div class="w-px bg-gray-100"></div>
-                    <div>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Materi Selesai</p>
-                        <p class="text-4xl font-black text-primary" id="student-progress">0<span class="text-xl text-gray-400">/0</span></p>
-                    </div>
-                </div>
-
-                <!-- Tabel Rincian -->
-                <div>
-                    <h3 class="text-lg font-extrabold text-teal-950 mb-3">Rincian Nilai Per Materi</h3>
-                    <div id="table-body" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <!-- Baris data di-render melalui JavaScript -->
+                <div class="text-center sm:text-left flex-1">
+                    <h2 class="text-2xl font-bold text-teal-950 mb-1" id="student-name">Nama Siswa</h2>
+                    <p class="text-sm text-gray-500 font-medium mb-3" id="student-info">ID • Kelas</p>
+                    
+                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <span class="px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-xs font-bold" id="exam-category">Kategori</span>
+                        <span class="px-3 py-1 bg-gray-50 text-gray-600 border border-gray-200 rounded-lg text-xs font-bold" id="exam-semester">Semester</span>
                     </div>
                 </div>
             </div>
-
-            <!-- Tampilan Error/Data Kosong -->
-            <div id="error-state" class="hidden text-center py-10">
-                <div class="text-red-500 text-6xl mb-4 opacity-50">⚠️</div>
-                <h3 class="text-xl font-extrabold text-teal-950">Data Tidak Ditemukan</h3>
-                <p class="text-sm text-gray-500 mt-2 max-w-sm mx-auto" id="error-message">Tautan ini mungkin sudah kedaluwarsa atau tidak valid. Silakan hubungi pihak sekolah.</p>
+            
+            <div class="flex flex-col gap-4 mt-8 pt-6 border-t border-gray-100">
+                <div class="bg-gray-50 rounded-2xl p-4 text-center">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Nilai Rata-rata</p>
+                    <p class="text-3xl font-black font-headline" id="final-score">-</p>
+                </div>
+                <div class="bg-blue-50/50 rounded-2xl p-4 text-center border border-blue-100 hidden" id="message-container">
+                    <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2">Catatan</p>
+                    <p class="text-sm font-medium text-teal-950 leading-relaxed" id="final-message">-</p>
+                </div>
             </div>
         </div>
-        
-        <div class="bg-gray-50 p-4 text-center border-t border-gray-200">
-            <p id="footer-copyright" class="text-[10px] text-gray-400 font-bold tracking-widest uppercase">Dihasilkan oleh Aplikasi Munaqosyah Digital</p>
+
+        <!-- Scores List -->
+        <h3 class="text-lg font-bold text-teal-950 mb-4 px-2 font-headline">Rincian Nilai Materi</h3>
+        <div class="space-y-3" id="scores-list">
+            <!-- Scores will be injected here -->
+        </div>
+
+        <div class="mt-10 text-center">
+            <button onclick="window.print()" class="px-6 py-3 bg-teal-800 text-white font-bold rounded-xl shadow-md hover:bg-teal-900 transition-colors inline-flex items-center gap-2">
+                <span class="material-symbols-outlined">print</span> Cetak Hasil
+            </button>
         </div>
     </div>
-    
-    <!-- Global Footer -->
-    <div class="fixed bottom-3 left-1/2 -translate-x-1/2 md:right-5 md:left-auto md:translate-x-0 z-[60] pointer-events-none transition-all duration-300">
-        <p class="text-[10px] text-gray-400/90 font-bold tracking-widest uppercase bg-white/80 backdrop-blur-md px-4 py-1.5 rounded-full shadow-sm border border-gray-200 whitespace-nowrap">
-            © 2026 Juman Jayyidin
-        </p>
-    </div>
 
+    <script src="js/firebase-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const params = new URLSearchParams(window.location.search);
-            const studentId = params.get('id');
-            const kategori = params.get('kat');
-            const semester = params.get('sem');
+            const urlParams = new URLSearchParams(window.location.search);
+            const studentId = urlParams.get('id');
+            const kategori = urlParams.get('kat');
+            const semester = urlParams.get('sem');
 
             if (!studentId || !kategori || !semester) {
-                showError("Tautan ini tidak lengkap. Pastikan Anda menyalin seluruh link dengan benar.");
+                document.getElementById('loading').innerHTML = '<p class="text-red-600 font-bold">Tautan Tidak Valid</p>';
                 return;
             }
 
             try {
+                // 1. Fetch App Settings
                 const settingsDoc = await db.collection('appData').doc('settings').get();
+                let kkm = 7.0;
                 if (settingsDoc.exists) {
                     const settings = settingsDoc.data();
-                    const appName = settings.appName ? settings.appName.replace(/<br\s*\/?>/gi, ' ') : 'Aplikasi Munaqosyah';
-                    
-                    document.getElementById('app-name-display').innerText = `Hasil Ujian - ${appName}`;
-                    document.getElementById('footer-copyright').innerText = `© ${new Date().getFullYear()} ${appName} - Dihasilkan oleh ${appName}`;
-                    
-                    if (settings.schoolName) {
-                        document.getElementById('school-name-display').innerText = settings.schoolName;
-                        document.title = `Hasil Ujian - ${appName} ${settings.schoolName}`;
-                    } else {
-                        document.getElementById('school-name-display').classList.add('hidden');
-                        document.title = `Hasil Ujian - ${appName}`;
-                    }
-                    
+                    if (settings.appName) document.getElementById('app-title').innerHTML = settings.appName.replace(/<br\s*[\/]?>/gi, ' ');
+                    if (settings.schoolName) document.getElementById('school-name').innerText = settings.schoolName;
+                    if (settings.kkm) kkm = parseFloat(settings.kkm);
                     if (settings.logoUrl) {
-                        document.getElementById('app-logo-display').src = settings.logoUrl;
-                        document.getElementById('app-logo-container').classList.remove('hidden');
-                        document.getElementById('app-logo-container').classList.add('flex');
+                        document.getElementById('app-logo').src = settings.logoUrl;
+                        document.getElementById('app-logo').classList.remove('hidden');
                     }
                 }
 
+                // 2. Fetch Student Data
                 const pesertaDoc = await db.collection('dataPeserta').doc(`${semester}_${kategori}`).get();
-                let pesertaList = [];
-                if (pesertaDoc.exists) { pesertaList = pesertaDoc.data().list || []; } 
-                else { const oldPesertaDoc = await db.collection('dataPeserta').doc(kategori).get(); if (oldPesertaDoc.exists) pesertaList = oldPesertaDoc.data().list || []; }
-
-                const student = pesertaList.find(p => p.id === studentId);
-                if (!student) { showError("Data peserta tidak ditemukan pada semester dan kategori ini."); return; }
-
-                document.getElementById('student-name').innerText = student.nama;
-                document.getElementById('student-id').innerText = student.id;
-                document.getElementById('student-category').innerText = kategori;
-                document.getElementById('student-class').innerText = student.kelas;
-                document.getElementById('student-semester').innerText = semester;
-
-                const materiList = getMateriListLocal(kategori);
-                let html = '', totalNilai = 0, countDinilai = 0;
-                let hasScoreBelow8 = false;
-
-                for (const materi of materiList) {
-                    const keyBaru = `${semester}_${studentId}_${materi.no}`;
-                    const keyLama = `${studentId}_${materi.no}`;
-                    
-                    let nilaiData = null;
-                    const docBaru = await db.collection('statePenilaian').doc(keyBaru).get();
-                    if (docBaru.exists) { nilaiData = docBaru.data(); } 
-                    else { const docLama = await db.collection('statePenilaian').doc(keyLama).get(); if (docLama.exists) nilaiData = docLama.data(); }
-
-                    if (nilaiData && nilaiData.nilai !== undefined) {
-                        totalNilai += nilaiData.nilai; countDinilai++;
-                        if (parseFloat(nilaiData.nilai) < 8) hasScoreBelow8 = true;
-                        const textColor = parseFloat(nilaiData.nilai) < 8 ? 'text-red-600' : 'text-primary';
-                        html += `
-                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                            <div><p class="font-bold text-sm text-teal-950">${materi.nama}</p><p class="text-xs text-gray-500">${materi.ayat}</p></div>
-                            <span class="text-2xl font-black font-headline ${textColor}">${nilaiData.nilai}</span>
-                        </div>`;
-                    } else {
-                        html += `
-                        <div class="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100 opacity-70">
-                            <div><p class="font-bold text-sm text-gray-400">${materi.nama}</p><p class="text-xs text-gray-400">${materi.ayat}</p></div>
-                            <span class="text-xs font-bold text-gray-400 italic">Belum Dinilai</span>
-                        </div>`;
-                    }
+                let peserta = null;
+                if (pesertaDoc.exists) {
+                    const list = pesertaDoc.data().list || [];
+                    peserta = list.find(p => p.id === studentId);
                 }
-                document.getElementById('table-body').innerHTML = html;
-                document.getElementById('student-progress').innerHTML = `${countDinilai}<span class="text-xl text-gray-400 font-medium">/${materiList.length}</span>`;
-                document.getElementById('student-avg').innerText = countDinilai > 0 ? (totalNilai / countDinilai).toFixed(1) : '0.0';
 
-                const msgContainer = document.getElementById('status-message-container');
-                if (msgContainer) {
-                    if (hasScoreBelow8) {
-                        msgContainer.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl text-sm font-medium leading-relaxed text-center shadow-sm">Qaddarullah, harap tidak berkecil hati. Ananda dapat mengikuti Ujian Munaqosyah pada semester depan. Silakan manfaatkan waktu tersebut untuk memaksimalkan perbaikan dan persiapan.</div>';
-                        msgContainer.classList.remove('hidden');
-                    } else if (countDinilai > 0 && countDinilai === materiList.length) {
-                        msgContainer.innerHTML = '<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-sm font-medium leading-relaxed text-center shadow-sm">Barakallahu fiikum, kami ucapkan selamat. Ananda berhak melanjutkan ke tahap Ujian Munaqosyah. Diharapkan untuk segera mempersiapkan diri dengan sebaik-baiknya.</div>';
-                        msgContainer.classList.remove('hidden');
-                    } else {
-                        msgContainer.classList.add('hidden');
+                // Fallback for older format
+                if (!peserta) {
+                    const fallbackDoc = await db.collection('dataPeserta').doc(kategori).get();
+                    if (fallbackDoc.exists) {
+                        const list = fallbackDoc.data().list || [];
+                        peserta = list.find(p => p.id === studentId);
                     }
                 }
 
-                document.getElementById('loading-state').classList.add('hidden');
-                document.getElementById('result-state').classList.remove('hidden');
-            } catch (error) { showError("Koneksi gagal. Pastikan pengaturan Firestore mengizinkan hak akses baca publik (read)."); }
+                if (!peserta) throw new Error("Data siswa tidak ditemukan di sistem.");
+
+                // 3. Fetch Surat/Materi for Category
+                const suratDoc = await db.collection('dataSurat').doc(kategori).get();
+                let materiList = [];
+                if (suratDoc.exists) {
+                    const data = suratDoc.data();
+                    materiList = Array.isArray(data) ? data : (data.list || Object.values(data));
+                }
+
+                // 4. Fetch Scores (State Penilaian)
+                const scorePrefix1 = `${semester}_${studentId}_`;
+                const scorePrefix2 = `${studentId}_`; // Legacy
+
+                // OPTIMASI: Ganti `get()` seluruh koleksi dengan query yang spesifik
+                const queryNew = db.collection('statePenilaian')
+                    .where(firebase.firestore.FieldPath.documentId(), '>=', scorePrefix1)
+                    .where(firebase.firestore.FieldPath.documentId(), '<', scorePrefix1 + '\uf8ff');
+
+                const queryLegacy = db.collection('statePenilaian')
+                    .where(firebase.firestore.FieldPath.documentId(), '>=', scorePrefix2)
+                    .where(firebase.firestore.FieldPath.documentId(), '<', scorePrefix2 + '\uf8ff');
+
+                const [newScoresSnapshot, legacyScoresSnapshot] = await Promise.all([queryNew.get(), queryLegacy.get()]);
+
+                const scoresMap = {};
+                let totalScore = 0;
+                let scoredItemsCount = 0;
+
+                const processSnapshot = (snapshot) => {
+                    snapshot.forEach(doc => {
+                        const id = doc.id;
+                        if (id.endsWith('_lembar')) return;
+
+                        let surahNo = null;
+                        // Cek format baru (dengan semester) terlebih dahulu
+                        if (id.startsWith(scorePrefix1)) {
+                            surahNo = id.substring(scorePrefix1.length);
+                        } 
+                        // Kemudian cek format lama, pastikan bukan format baru dari semester lain
+                        else if (id.startsWith(scorePrefix2)) {
+                            const underscoreCount = (id.match(/_/g) || []).length;
+                            if (underscoreCount === 1) { // Format lama hanya punya 1 underscore: id_no
+                                surahNo = id.substring(scorePrefix2.length);
+                            }
+                        }
+
+                        if (!surahNo) return;
+
+                        const val = doc.data().nilai;
+
+                        if (val !== undefined && materiList.some(m => String(m.no) === String(surahNo))) {
+                            if (scoresMap[surahNo] === undefined) {
+                                scoresMap[surahNo] = val;
+                                totalScore += val;
+                                scoredItemsCount++;
+                            }
+                        }
+                    });
+                };
+
+                processSnapshot(newScoresSnapshot);
+                processSnapshot(legacyScoresSnapshot);
+
+                // Calculate Results
+                const avg = scoredItemsCount > 0 ? parseFloat((totalScore / scoredItemsCount).toFixed(1)) : 0;
+                const isCompleted = scoredItemsCount === materiList.length && materiList.length > 0;
+                const hasRemedial = Object.values(scoresMap).some(n => n < kkm);
+                const isPassed = isCompleted && !hasRemedial && avg >= kkm;
+
+                // Populate UI
+                document.getElementById('student-avatar').innerText = peserta.inisial || '-';
+                document.getElementById('student-avatar').className = `w-24 h-24 rounded-full flex items-center justify-center text-3xl font-bold shadow-inner ${peserta.warna || 'bg-gray-200 text-gray-700'}`;
+                
+                document.getElementById('student-name').innerText = peserta.nama;
+                document.getElementById('student-info').innerText = `${peserta.id} • ${peserta.kelas}`;
+                document.getElementById('exam-category').innerText = kategori;
+                document.getElementById('exam-semester').innerText = `Semester ${semester}`;
+
+                const finalScoreEl = document.getElementById('final-score');
+                if (scoredItemsCount === 0) {
+                    finalScoreEl.innerText = '-';
+                    finalScoreEl.className = 'text-3xl font-black font-headline text-gray-400';
+                } else {
+                    finalScoreEl.innerText = avg;
+                    finalScoreEl.className = `text-3xl font-black font-headline ${avg < kkm ? 'text-red-600' : 'text-teal-950'}`;
+                }
+
+                const messageContainer = document.getElementById('message-container');
+                const finalMessage = document.getElementById('final-message');
+
+                if (isPassed) {
+                    messageContainer.classList.remove('hidden');
+                    messageContainer.classList.add('flex', 'flex-col', 'justify-center');
+                    finalMessage.innerText = "Barakallahu fiikum, kami ucapkan selamat. Ananda berhak melanjutkan ke tahap Ujian Munaqosyah. Diharapkan untuk segera mempersiapkan diri dengan sebaik-baiknya.";
+                } else if (hasRemedial || (isCompleted && !isPassed)) {
+                    messageContainer.classList.remove('hidden');
+                    messageContainer.classList.add('flex', 'flex-col', 'justify-center');
+                    finalMessage.innerText = "Qaddarullah, harap tidak berkecil hati. Ananda dapat mengikuti Ujian Munaqosyah pada semester depan. Silakan manfaatkan waktu tersebut untuk memaksimalkan perbaikan dan persiapan.";
+                } else {
+                    messageContainer.classList.add('hidden');
+                    messageContainer.classList.remove('flex', 'flex-col', 'justify-center');
+                }
+
+                // Render Scores List
+                const scoresListEl = document.getElementById('scores-list');
+                if (materiList.length === 0) {
+                    scoresListEl.innerHTML = '<p class="text-center text-gray-400 italic bg-white p-4 rounded-xl border border-gray-100">Belum ada materi ujian.</p>';
+                } else {
+                    let html = '';
+                    materiList.forEach(materi => {
+                        const score = scoresMap[materi.no];
+                        const isScored = score !== undefined;
+                        
+                        let scoreColor = 'text-gray-400 bg-gray-50 border-gray-200';
+                        if (isScored) {
+                            scoreColor = score < kkm ? 'text-red-600 bg-red-50 border-red-200' : 'text-teal-700 bg-teal-50 border-teal-200';
+                        }
+
+                        html += `
+                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <div>
+                                <h4 class="font-bold text-teal-950">${materi.nama}</h4>
+                                <p class="text-[11px] text-gray-500">${typeof materi.ayat === 'number' ? materi.ayat + ' Ayat' : materi.ayat}</p>
+                            </div>
+                            <div class="w-14 h-10 flex items-center justify-center rounded-lg border font-black ${scoreColor}">
+                                ${isScored ? score : '-'}
+                            </div>
+                        </div>`;
+                    });
+                    scoresListEl.innerHTML = html;
+                }
+
+                // Show Content
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('loading').innerHTML = `<p class="text-red-600 font-bold bg-red-50 px-4 py-2 rounded-lg border border-red-200">Terjadi Kesalahan:<br>${error.message}</p>`;
+            }
         });
-
-        function getMateriListLocal(kategori) { if (typeof dataSurat === 'undefined' || !dataSurat || !kategori) return []; const raw = dataSurat[kategori]; if (!raw) return []; let items = []; if (Array.isArray(raw)) items = raw; else if (typeof raw === 'object') { if (raw.list) items = Array.isArray(raw.list) ? raw.list : Object.values(raw.list); else items = Object.values(raw); } return items.flat().filter(item => item && typeof item === 'object' && item.no !== undefined && item.nama !== undefined); }
-        function showError(msg) { document.getElementById('loading-state').classList.add('hidden'); document.getElementById('error-state').classList.remove('hidden'); document.getElementById('error-message').innerText = msg; }
     </script>
 </body>
 </html>

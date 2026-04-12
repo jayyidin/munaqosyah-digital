@@ -31,7 +31,9 @@ if (!firebase.apps.length) {
 
 // Deklarasikan db secara global agar bisa dibaca file JS lain
 window.db = firebase.firestore();
-window.storage = firebase.storage();
+if (typeof firebase.storage === 'function') {
+    window.storage = firebase.storage();
+}
 
 // MENGAKTIFKAN PENYIMPANAN OFFLINE (Sangat penting agar data tidak hilang jika pengguna me-refresh halaman terlalu cepat)
 try {

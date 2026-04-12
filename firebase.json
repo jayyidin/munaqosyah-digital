@@ -1,16 +1,11 @@
 {
   "hosting": {
-    "public": ".",
+    "site": "munaqosyah-sditalfityan",
+    "public": ".", 
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
     ]
   }
 }

@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let title = "Login";
             if (appNameEl && typeof settings.appName === 'string') {
                 // Ganti <br> dengan spasi untuk memastikan judul selalu satu baris
-                const singleLineAppName = settings.appName.replace(/<br\s*\/?>/gi, ' ');
+                const singleLineAppName = settings.appName.replace(/<br\s*[\/]?>/gi, ' ');
                 appNameEl.innerHTML = singleLineAppName;
                 title = singleLineAppName;
             }

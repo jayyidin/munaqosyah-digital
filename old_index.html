@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="id">
 
 <head>
@@ -1087,6 +1087,17 @@
                                         Unduh Cadangan
                                     </button>
                                 </div>
+                                    <div
+                                        class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                                        <div>
+                                            <h4 class="font-bold text-emerald-800">Sinkronkan Master Data</h4>
+                                            <p class="text-xs text-emerald-600">Pindai database untuk meregistrasikan Kategori, Semester, dan Kelas yang tidak terdaftar.</p>
+                                        </div>
+                                        <button id="btn-sync-master" onclick="window.sinkronkanMasterData()"
+                                            class="mt-2 sm:mt-0 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors shrink-0 shadow-sm active:scale-95">
+                                            Mulai Pemindaian
+                                        </button>
+                                    </div>
                                 <div
                                     class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-red-50/50 rounded-lg border border-red-100">
                                     <div>

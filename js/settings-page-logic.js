@@ -41,12 +41,33 @@
                                             let currentBatch = db.batch();
                                             let opCount = 0;
 
-                                            // 1. Kosongkan Data Peserta dari semua kategori
+                                            // 1. Hapus semua Data Peserta dari cloud
+                                            const pesertaSnap = await db.collection('dataPeserta').get();
+                                            pesertaSnap.forEach(doc => {
+                                                currentBatch.delete(doc.ref);
+                                                opCount++;
+                                                if (opCount >= 490) {
+                                                    batches.push(currentBatch.commit());
+                                                    currentBatch = db.batch();
+                                                    opCount = 0;
+                                                }
+                                            });
+                                            
+                                            // Buat ulang wadah kosong sesuai data master
                                             if (typeof listKategori !== 'undefined') {
-                                                listKategori.forEach(k => {
-                                                    currentBatch.set(db.collection('dataPeserta').doc(k.nama), { list: [] });
-                                                    opCount++;
-                                                });
+                                                if (typeof listSemester !== 'undefined' && listSemester.length > 0) {
+                                                    listSemester.forEach(sem => {
+                                                        listKategori.forEach(k => {
+                                                            currentBatch.set(db.collection('dataPeserta').doc(`${sem}_${k.nama}`), { list: [] });
+                                                            opCount++;
+                                                        });
+                                                    });
+                                                } else {
+                                                    listKategori.forEach(k => {
+                                                        currentBatch.set(db.collection('dataPeserta').doc(k.nama), { list: [] });
+                                                        opCount++;
+                                                    });
+                                                }
                                             }
 
                                             // 2. Hapus seluruh Dokumen Nilai Ujian
@@ -112,6 +133,67 @@
                                 if (typeof openAlert === 'function') openAlert("Format JSON tidak valid!"); else alert("Format JSON tidak valid!");
                             }
                         };
+
+                        window.pulihkanStrukturData = async function() {
+                            const msg = "Tindakan ini akan memulihkan dan membuat ulang kerangka Data Bawaan (Kategori Tartil M1-M5, Semester Baru, dan Kelas) ke dalam database Anda yang kosong.\n\nLanjutkan?";
+                            if (typeof openConfirm === 'function') {
+                                openConfirm(msg, async (yes) => {
+                                    if (yes) await prosesPulihkanStruktur();
+                                });
+                            } else {
+                                if (confirm(msg)) {
+                                    await prosesPulihkanStruktur();
+                                }
+                            }
+                        };
+
+                        async function prosesPulihkanStruktur() {
+                            try {
+                                const batch = db.batch();
+                                
+                                const katList = [
+                                    { nama: "Tartil", tipe: "tartil" },
+                                    { nama: "Tahfidz Juz 30", tipe: "standar" },
+                                    { nama: "Tilawah", tipe: "lembar" }
+                                ];
+                                batch.set(db.collection('appData').doc('kategori'), { list: katList });
+
+                                const materiTartil = [
+                                    { no: "M1", nama: "Aspek Penilaian Tartil", ayat: "Muraatut Tajwid, Kalimah, dll" },
+                                    { no: "M2", nama: "Aspek Penilaian Fashohah", ayat: "Muraatul Huruf, Harokat, dll" },
+                                    { no: "M3", nama: "Aspek Penilaian Ghorib", ayat: "Soal Ayat & Evaluasi" },
+                                    { no: "M4", nama: "Aspek Penilaian Tajwid", ayat: "Soal Teori & Uraian" },
+                                    { no: "M5", nama: "Adab dan Sikap", ayat: "Adab Tilawah & Pakaian" }
+                                ];
+                                batch.set(db.collection('dataSurat').doc('Tartil'), { list: materiTartil });
+                                batch.set(db.collection('dataSurat').doc('Tahfidz Juz 30'), { list: [] });
+                                batch.set(db.collection('dataSurat').doc('Tilawah'), { list: [] });
+                                
+                                const currYear = new Date().getFullYear();
+                                const semList = [`Ganjil ${currYear}-${currYear+1}`, `Genap ${currYear}-${currYear+1}`];
+                                batch.set(db.collection('appData').doc('semester'), { list: semList });
+
+                                const kelasList = ["Kelas 1", "Kelas 2", "Kelas 3", "Kelas 4", "Kelas 5", "Kelas 6"];
+                                batch.set(db.collection('appData').doc('kelas'), { list: kelasList });
+
+                                // Inisialisasi wadah peserta kosong untuk setiap kombinasi semester & kategori
+                                semList.forEach(sem => {
+                                    katList.forEach(kat => {
+                                        batch.set(db.collection('dataPeserta').doc(`${sem}_${kat.nama}`), { list: [] });
+                                    });
+                                });
+
+                                await batch.commit();
+                                
+                                if (typeof openAlert === 'function') openAlert("Struktur data bawaan berhasil dipulihkan!");
+                                else alert("Struktur data bawaan berhasil dipulihkan!");
+                                
+                                setTimeout(() => window.location.reload(), 1500);
+                            } catch (e) {
+                                console.error("Gagal memulihkan kerangka data", e);
+                                if (typeof openAlert === 'function') openAlert("Gagal memulihkan kerangka data: " + e.message);
+                            }
+                        }
 
                         // --- Logika Pengaturan Umum (Info & Logo Aplikasi) ---
                         (function initPengaturanUmum() {
@@ -346,14 +428,40 @@
                             const filtered = listKategori.filter(k => k.nama !== nama);
                             listKategori.length = 0;
                             filtered.forEach(k => listKategori.push(k));
-                            if (typeof dataPeserta !== 'undefined') delete dataPeserta[nama];
+
+                            const batch = db.batch();
+                            batch.set(db.collection('appData').doc('kategori'), { list: listKategori });
+                            batch.delete(db.collection('dataSurat').doc(nama));
+
+                            // Amankan data lokal & bersihkan kategori yang mirip (mengatasi orphan/typo cache)
+                            if (typeof dataPeserta !== 'undefined') {
+                                const cleanNama = nama.trim().toLowerCase();
+                                Object.keys(dataPeserta).forEach(key => {
+                                    let katName = key;
+                                    if (key.includes('_')) {
+                                        const parts = key.split('_');
+                                        katName = parts.slice(1).join('_');
+                                    }
+                                    if (katName.trim().toLowerCase() === cleanNama || key === nama || key.endsWith(`_${nama}`)) {
+                                        delete dataPeserta[key];
+                                        batch.delete(db.collection('dataPeserta').doc(key));
+                                    }
+                                });
+                            }
+                            
+                            // Amankan database firebase secara eksplisit untuk semua semester yang ada
+                            if (typeof listSemester !== 'undefined' && Array.isArray(listSemester)) {
+                                listSemester.forEach(sem => {
+                                    const explicitKey = `${sem}_${nama}`;
+                                    batch.delete(db.collection('dataPeserta').doc(explicitKey));
+                                    if (typeof dataPeserta !== 'undefined' && dataPeserta[explicitKey]) {
+                                        delete dataPeserta[explicitKey];
+                                    }
+                                });
+                            }
                             if (typeof dataSurat !== 'undefined') delete dataSurat[nama];
 
                             try {
-                                const batch = db.batch();
-                                batch.set(db.collection('appData').doc('kategori'), { list: listKategori });
-                                batch.delete(db.collection('dataPeserta').doc(nama));
-                                batch.delete(db.collection('dataSurat').doc(nama));
                                 await batch.commit();
 
                                 localStorage.setItem('munaqosyah_listKategori', JSON.stringify(listKategori));
@@ -361,10 +469,15 @@
                                 window.renderListKategoriEdit();
                                 if (typeof openAlert === 'function') openAlert(`Kategori "${nama}" berhasil dihapus.`);
                                 
+                                if (typeof window.renderKategoriDropdown === 'function') window.renderKategoriDropdown();
                                 if (typeof renderDashboardFilterOptions === 'function') renderDashboardFilterOptions();
                                 if (typeof filterPeserta === 'function') filterPeserta();
                                 if (typeof updateQuickStats === 'function') updateQuickStats();
                                 if (typeof setupLaporanFilters === 'function') setupLaporanFilters();
+
+                                if (typeof renderDashboard === 'function' && document.getElementById('view-dashboard') && !document.getElementById('view-dashboard').classList.contains('hidden')) {
+                                    renderDashboard();
+                                }
                             } catch (e) {
                                 console.error("Gagal menghapus kategori", e);
                                 if (typeof openAlert === 'function') openAlert("Gagal menghapus kategori: " + e.message);
@@ -401,18 +514,6 @@
                                     listKategori[idx].nama = newNama;
                                     listKategori[idx].tipe = tipe;
                                 }
-                                
-                                if (newNama !== originalNama) {
-                                    if (typeof dataPeserta !== 'undefined') {
-                                        dataPeserta[newNama] = dataPeserta[originalNama] || [];
-                                        delete dataPeserta[originalNama];
-                                        dataPeserta[newNama].forEach(p => p.kategori = newNama);
-                                    }
-                                    if (typeof dataSurat !== 'undefined') {
-                                        dataSurat[newNama] = dataSurat[originalNama] || [];
-                                        delete dataSurat[originalNama];
-                                    }
-                                }
                             }
 
                             try {
@@ -420,13 +521,78 @@
                                 batch.set(db.collection('appData').doc('kategori'), { list: listKategori });
                                 
                                 if (isEdit && newNama !== originalNama) {
-                                    batch.set(db.collection('dataPeserta').doc(newNama), { list: dataPeserta[newNama] || [] });
-                                    batch.delete(db.collection('dataPeserta').doc(originalNama));
+                                    // Terapkan perubahan key ke Firebase dengan memprioritaskan data lokal (Mencegah hilang jika sinkronisasi telat)
+                                    if (typeof listSemester !== 'undefined') {
+                                        for (const sem of listSemester) {
+                                            const oldKey = `${sem}_${originalNama}`;
+                                            const newKey = `${sem}_${newNama}`;
+                                            
+                                            let listToSave = null;
+                                            if (typeof dataPeserta !== 'undefined' && dataPeserta[oldKey] !== undefined) {
+                                                listToSave = Array.isArray(dataPeserta[oldKey]) ? dataPeserta[oldKey] : (dataPeserta[oldKey].list || []);
+                                            } else {
+                                                const docRef = await db.collection('dataPeserta').doc(oldKey).get();
+                                                if (docRef.exists) listToSave = docRef.data().list || [];
+                                            }
+                                            
+                                            if (listToSave !== null) {
+                                                listToSave.forEach(p => p.kategori = newNama);
+                                                batch.set(db.collection('dataPeserta').doc(newKey), { list: listToSave });
+                                                batch.delete(db.collection('dataPeserta').doc(oldKey));
+                                                if (typeof dataPeserta !== 'undefined') {
+                                                    dataPeserta[newKey] = listToSave;
+                                                    delete dataPeserta[oldKey];
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Fallback format lokal (tanpa semester)
+                                    let fallbackListToSave = null;
+                                    if (typeof dataPeserta !== 'undefined' && dataPeserta[originalNama] !== undefined) {
+                                        fallbackListToSave = Array.isArray(dataPeserta[originalNama]) ? dataPeserta[originalNama] : (dataPeserta[originalNama].list || []);
+                                    } else {
+                                        const oldDocRef = await db.collection('dataPeserta').doc(originalNama).get();
+                                        if (oldDocRef.exists) fallbackListToSave = oldDocRef.data().list || [];
+                                    }
+                                    
+                                    if (fallbackListToSave !== null) {
+                                        fallbackListToSave.forEach(p => p.kategori = newNama);
+                                        batch.set(db.collection('dataPeserta').doc(newNama), { list: fallbackListToSave });
+                                        batch.delete(db.collection('dataPeserta').doc(originalNama));
+                                        if (typeof dataPeserta !== 'undefined') {
+                                            dataPeserta[newNama] = fallbackListToSave;
+                                            delete dataPeserta[originalNama];
+                                        }
+                                    }
 
-                                    batch.set(db.collection('dataSurat').doc(newNama), { list: dataSurat[newNama] || [] });
-                                    batch.delete(db.collection('dataSurat').doc(originalNama));
+                                    // Memindahkan daftar materi (Surat)
+                                    let suratToSave = null;
+                                    if (typeof dataSurat !== 'undefined' && dataSurat[originalNama] !== undefined) {
+                                        suratToSave = dataSurat[originalNama];
+                                    } else {
+                                        const suratDoc = await db.collection('dataSurat').doc(originalNama).get();
+                                        if (suratDoc.exists) suratToSave = suratDoc.data();
+                                    }
+                                    
+                                    if (suratToSave !== null) {
+                                        const finalSuratData = Array.isArray(suratToSave) ? { list: suratToSave } : suratToSave;
+                                        batch.set(db.collection('dataSurat').doc(newNama), finalSuratData);
+                                        batch.delete(db.collection('dataSurat').doc(originalNama));
+                                        if (typeof dataSurat !== 'undefined') {
+                                            dataSurat[newNama] = Array.isArray(suratToSave) ? suratToSave : (suratToSave.list || Object.values(suratToSave));
+                                            delete dataSurat[originalNama];
+                                        }
+                                    }
                                 } else if (!isEdit) {
-                                    batch.set(db.collection('dataPeserta').doc(newNama), { list: [] });
+                                    // Jika buat baru, pastikan terikat pada semua semester yang ada
+                                    if (typeof listSemester !== 'undefined' && Array.isArray(listSemester) && listSemester.length > 0) {
+                                        listSemester.forEach(sem => {
+                                            batch.set(db.collection('dataPeserta').doc(`${sem}_${newNama}`), { list: [] });
+                                        });
+                                    } else if (typeof window.currentState !== 'undefined' && window.currentState.semester) {
+                                        batch.set(db.collection('dataPeserta').doc(`${window.currentState.semester}_${newNama}`), { list: [] });
+                                    }
                                     batch.set(db.collection('dataSurat').doc(newNama), { list: [] });
                                 }
 

@@ -331,8 +331,12 @@
                                 .then(() => {
                                     document.getElementById('import-textarea').value = '';
                                     resetPratinjauImpor();
+                                    if (typeof pesertaPagination !== 'undefined') pesertaPagination.currentPage = 1;
+                                    const searchEl = document.getElementById('search-peserta');
+                                    if (searchEl) searchEl.value = '';
                                     tutupModalTambahPeserta();
-                                    renderTablePeserta();
+                                if (typeof window.renderTablePeserta === 'function') window.renderTablePeserta();
+                                if (typeof window.updateQuickStats === 'function') window.updateQuickStats();
                                 })
                                 .catch(error => openAlert("Gagal menyimpan hasil impor. Error: " + error.message));
                         }
@@ -347,10 +351,12 @@
                             resetPratinjauImpor();
 
                             // Populate semester dropdowns
+                            const activeSem = window.currentState ? window.currentState.semester : '';
+                            const semOptions = listSemester.map(s => `<option value="${s}" ${s === activeSem ? 'selected' : ''}>${s}</option>`).join('');
                             const semesterSelectManual = document.getElementById('tambah-semester');
                             const semesterSelectImport = document.getElementById('import-semester');
-                            if (semesterSelectManual) semesterSelectManual.innerHTML = listSemester.map(s => `<option value="${s}">${s}</option>`).join('');
-                            if (semesterSelectImport) semesterSelectImport.innerHTML = listSemester.map(s => `<option value="${s}">${s}</option>`).join('');
+                            if (semesterSelectManual) semesterSelectManual.innerHTML = semOptions;
+                            if (semesterSelectImport) semesterSelectImport.innerHTML = semOptions;
 
 
                             document.getElementById('tambah-kategori').innerHTML = listKategori.map(k => `<option value="${k.nama}">${k.nama}</option>`).join('');
@@ -405,7 +411,13 @@
                                 return;
                             }
 
-                            const id = generateUniqueId(semester, kategori);
+                            const key = `${semester}_${kategori}`;
+                            let currentPesertaList = dataPeserta[key] || [];
+                            if (currentPesertaList && !Array.isArray(currentPesertaList) && Array.isArray(currentPesertaList.list)) currentPesertaList = currentPesertaList.list;
+                            if (!Array.isArray(currentPesertaList)) currentPesertaList = [];
+
+                            const existingIds = currentPesertaList.map(p => p.id);
+                            const id = generateUniqueId(semester, kategori, existingIds);
 
                             const inisial = nama.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                             const warna = ["bg-blue-100 text-blue-700", "bg-teal-100 text-teal-700", "bg-purple-100 text-purple-700", "bg-amber-100 text-amber-700", "bg-red-100 text-red-700"];
@@ -418,15 +430,22 @@
                                 tanggalUjian: tanggalUjian || null
                             };
 
-                            const key = `${semester}_${kategori}`;
-                            const currentPesertaList = dataPeserta[key] || [];
                             const newPesertaList = [...currentPesertaList, newPeserta];
                             dataPeserta[key] = newPesertaList;
 
                             db.collection('dataPeserta').doc(key).set({ list: newPesertaList })
                                 .then(() => {
+                                    document.getElementById('tambah-nama').value = '';
+                                    if (typeof pesertaPagination !== 'undefined') pesertaPagination.currentPage = 1;
+                                    const searchEl = document.getElementById('search-peserta');
+                                    if (searchEl) searchEl.value = '';
+                                    const filterKat = document.getElementById('filter-tabel-kategori');
+                                    if (filterKat && filterKat.value !== '' && filterKat.value !== kategori) {
+                                        if (typeof window.setFilterPesertaKategori === 'function') window.setFilterPesertaKategori(kategori);
+                                    }
                                     tutupModalTambahPeserta();
-                                    renderTablePeserta(); // Refresh the participant table
+                                if (typeof window.renderTablePeserta === 'function') window.renderTablePeserta(); // Refresh the participant table
+                                if (typeof window.updateQuickStats === 'function') window.updateQuickStats();
                                     // UI will be updated by the 'on' listener.
                                 })
                                 .catch(error => openAlert("Gagal menyimpan peserta baru. Error: " + error.message));
@@ -538,9 +557,11 @@
                                     const randomWarna = warna[Math.floor(Math.random() * warna.length)];
 
                                     const key = `${p.semester}_${p.kategori}`;
-                                    if (!dataPeserta[key]) dataPeserta[key] = [];
-                                    
-                                    dataPeserta[key].push({ id, inisial, warna: randomWarna, nama: p.nama, kelas: p.kelas, pembimbing: "Belum Ditentukan", tanggalUjian: tanggalUjian || null });
+                                    let pList = dataPeserta[key] || [];
+                                    if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
+                                    if (!Array.isArray(pList)) pList = [];
+                                    pList.push({ id, inisial, warna: randomWarna, nama: p.nama, kelas: p.kelas, pembimbing: "Belum Ditentukan", tanggalUjian: tanggalUjian || null });
+                                    dataPeserta[key] = pList;
                                     berhasil++;
                                 });
 
