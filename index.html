@@ -385,7 +385,7 @@
                         <div class="text-left">
                             <h3 class="font-bold text-lg font-headline leading-tight group-hover:underline">Tambah
                                 Peserta</h3>
-                            <p class="text-[11px] text-teal-100 mt-1 font-medium">Daftarkan santri baru</p>
+                            <p class="text-[11px] text-teal-100 mt-1 font-medium">Daftarkan siswa baru</p>
                         </div>
                     </button>
                     <button onclick="switchView('ujian')"
@@ -397,7 +397,7 @@
                         <div class="text-left">
                             <h3 class="font-bold text-lg font-headline leading-tight group-hover:underline">Mulai
                                 Penilaian</h3>
-                            <p class="text-[11px] text-teal-100 mt-1 font-medium">Buka form pengujian santri</p>
+                            <p class="text-[11px] text-teal-100 mt-1 font-medium">Buka form pengujian siswa</p>
                         </div>
                     </button>
                     <button onclick="switchView('laporan')"
@@ -677,7 +677,7 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div id="pagination-peserta" class="flex justify-center items-center pt-8 space-x-2">
+                    <div id="pagination-peserta" class="flex flex-wrap justify-center items-center pt-8 gap-2">
                         <!-- Pagination controls injected by JS -->
                     </div>
 
@@ -745,7 +745,7 @@
                         <div class="absolute right-0 top-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 pointer-events-none"></div>
                         <div class="w-full lg:w-auto">
                             <h2 class="text-2xl font-headline font-extrabold text-teal-950 tracking-tight mb-1">Daftar Peserta Ujian</h2>
-                            <p class="text-sm font-medium text-gray-500">Pilih santri untuk mulai memberikan nilai.</p>
+                            <p class="text-sm font-medium text-gray-500">Pilih siswa untuk mulai memberikan nilai.</p>
                         </div>
                         
                         <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto shrink-0">
@@ -781,7 +781,7 @@
                         <!-- Cards peserta di-render oleh JS -->
                     </section>
 
-                    <section id="pagination-ujian" class="flex justify-center items-center pt-2 space-x-2">
+                    <section id="pagination-ujian" class="flex flex-wrap justify-center items-center pt-2 gap-2">
                         <!-- Tombol paginasi di-render oleh JS -->
                     </section>
 
@@ -926,7 +926,7 @@
                             Nilai
                             Akhir</h2>
                         <p class="text-gray-500 font-medium mt-1">Pantau, saring, dan unduh laporan hasil munaqosyah
-                            santri.</p>
+                            siswa.</p>
                     </div>
 
                     <!-- FITUR 1: Statistik Cepat (Quick Stats) -->
@@ -1123,7 +1123,7 @@
                     </div>
 
                     <!-- Pagination Controls -->
-                    <div id="pagination-laporan" class="flex justify-center items-center pt-8 space-x-2">
+                    <div id="pagination-laporan" class="flex flex-wrap justify-center items-center pt-8 gap-2">
                         <!-- Kontrol Paginasi akan dirender di sini -->
                     </div>
 
@@ -1471,7 +1471,7 @@
             <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Tambah Peserta</h3>
-                        <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Input Data Santri
+                        <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Input Data Siswa
                             Baru
                         </p>
                     </div>
@@ -1627,7 +1627,7 @@
             <div class="px-4 md:px-6 py-4 bg-gray-50/80 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <div>
                         <h3 class="font-headline font-bold text-lg text-teal-950">Edit Peserta</h3>
-                        <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Perbarui Data Santri
+                        <p class="text-[11px] text-gray-500 font-medium uppercase tracking-widest">Perbarui Data Siswa
                         </p>
                     </div>
                     <button onclick="tutupModalEditPeserta()"

@@ -55,6 +55,9 @@
             <!-- Tampilan Data Hasil Ujian -->
             <div id="result-state" class="hidden space-y-8 animate-[fadeIn_0.5s_ease-out]">
                 
+                <!-- Pesan Status Kelulusan -->
+                <div id="status-message-container" class="hidden"></div>
+
                 <!-- Info Siswa -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-5 rounded-2xl border border-gray-200">
                     <div>
@@ -94,20 +97,8 @@
                 <!-- Tabel Rincian -->
                 <div>
                     <h3 class="text-lg font-extrabold text-teal-950 mb-3">Rincian Nilai Per Materi</h3>
-                    <div class="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-gray-100 border-b border-gray-200 text-gray-500">
-                                <tr>
-                                    <th class="px-4 py-3 font-bold text-xs uppercase tracking-wider">Materi</th>
-                                    <th class="px-4 py-3 font-bold text-xs uppercase tracking-wider text-center">Nilai</th>
-                                    <th class="px-4 py-3 font-bold text-xs uppercase tracking-wider">Penguji</th>
-                                    <th class="px-4 py-3 font-bold text-xs uppercase tracking-wider">Catatan</th>
-                                </tr>
-                            </thead>
-                            <tbody id="table-body" class="divide-y divide-gray-100 bg-white">
-                                <!-- Baris tabel di-render melalui JavaScript -->
-                            </tbody>
-                        </table>
+                    <div id="table-body" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- Baris data di-render melalui JavaScript -->
                     </div>
                 </div>
             </div>
@@ -184,6 +175,7 @@
 
                 const materiList = getMateriListLocal(kategori);
                 let html = '', totalNilai = 0, countDinilai = 0;
+                let hasScoreBelow8 = false;
 
                 for (const materi of materiList) {
                     const keyBaru = `${semester}_${studentId}_${materi.no}`;
@@ -196,14 +188,37 @@
 
                     if (nilaiData && nilaiData.nilai !== undefined) {
                         totalNilai += nilaiData.nilai; countDinilai++;
-                        html += `<tr class="hover:bg-gray-50 transition-colors"><td class="px-4 py-3 font-bold text-gray-800">${materi.nama} <span class="text-[10px] text-gray-400 block font-normal mt-0.5">${materi.ayat}</span></td><td class="px-4 py-3 text-center font-extrabold text-primary text-lg">${nilaiData.nilai}</td><td class="px-4 py-3 text-gray-500 text-xs font-medium">${nilaiData.penguji || '-'}</td><td class="px-4 py-3 text-gray-600 text-xs max-w-[200px] truncate" title="${nilaiData.catatan || '-'}">${nilaiData.catatan || '-'}</td></tr>`;
+                        if (parseFloat(nilaiData.nilai) < 8) hasScoreBelow8 = true;
+                        const textColor = parseFloat(nilaiData.nilai) < 8 ? 'text-red-600' : 'text-primary';
+                        html += `
+                        <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                            <div><p class="font-bold text-sm text-teal-950">${materi.nama}</p><p class="text-xs text-gray-500">${materi.ayat}</p></div>
+                            <span class="text-2xl font-black font-headline ${textColor}">${nilaiData.nilai}</span>
+                        </div>`;
                     } else {
-                        html += `<tr class="hover:bg-gray-50 bg-gray-50/50"><td class="px-4 py-3 font-semibold text-gray-400">${materi.nama} <span class="text-[10px] block font-normal mt-0.5">${materi.ayat}</span></td><td class="px-4 py-3 text-center text-gray-400 italic text-[11px] font-bold">Belum Dinilai</td><td class="px-4 py-3 text-gray-400 text-xs">-</td><td class="px-4 py-3 text-gray-400 text-xs">-</td></tr>`;
+                        html += `
+                        <div class="flex items-center justify-between bg-gray-50 p-4 rounded-xl border border-gray-100 opacity-70">
+                            <div><p class="font-bold text-sm text-gray-400">${materi.nama}</p><p class="text-xs text-gray-400">${materi.ayat}</p></div>
+                            <span class="text-xs font-bold text-gray-400 italic">Belum Dinilai</span>
+                        </div>`;
                     }
                 }
                 document.getElementById('table-body').innerHTML = html;
                 document.getElementById('student-progress').innerHTML = `${countDinilai}<span class="text-xl text-gray-400 font-medium">/${materiList.length}</span>`;
                 document.getElementById('student-avg').innerText = countDinilai > 0 ? (totalNilai / countDinilai).toFixed(1) : '0.0';
+
+                const msgContainer = document.getElementById('status-message-container');
+                if (msgContainer) {
+                    if (hasScoreBelow8) {
+                        msgContainer.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl text-sm font-medium leading-relaxed text-center shadow-sm">Qaddarullah, harap tidak berkecil hati. Ananda dapat mengikuti Ujian Munaqosyah pada semester depan. Silakan manfaatkan waktu tersebut untuk memaksimalkan perbaikan dan persiapan.</div>';
+                        msgContainer.classList.remove('hidden');
+                    } else if (countDinilai > 0 && countDinilai === materiList.length) {
+                        msgContainer.innerHTML = '<div class="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-sm font-medium leading-relaxed text-center shadow-sm">Barakallahu fiikum, kami ucapkan selamat. Ananda berhak melanjutkan ke tahap Ujian Munaqosyah. Diharapkan untuk segera mempersiapkan diri dengan sebaik-baiknya.</div>';
+                        msgContainer.classList.remove('hidden');
+                    } else {
+                        msgContainer.classList.add('hidden');
+                    }
+                }
 
                 document.getElementById('loading-state').classList.add('hidden');
                 document.getElementById('result-state').classList.remove('hidden');

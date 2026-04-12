@@ -24,21 +24,25 @@ function getFilteredLaporanData(allData) {
     else if (filterStatus === 'susulan') dataToFilter = dataToFilter.filter(s => s.isSusulan);
     if (filterPembimbing) dataToFilter = dataToFilter.filter(s => s.pembimbing === filterPembimbing);
     if (filterPenguji) {
+        const semester = window.currentState.semester;
         dataToFilter = dataToFilter.filter(s => {
-            const prefix = s.id + '_';
+            const prefixBaru = `${semester}_${s.id}_`;
+            const prefixLama = `${s.id}_`;
             return typeof statePenilaian !== 'undefined' && Object.keys(statePenilaian).some(key => 
-                key.startsWith(prefix) && statePenilaian[key] && statePenilaian[key].penguji === filterPenguji
+                (key.startsWith(prefixBaru) || (!key.includes(semester) && key.startsWith(prefixLama))) && statePenilaian[key] && statePenilaian[key].penguji === filterPenguji
             );
         });
     }
     if (searchTerm) {
+        const semester = window.currentState.semester;
         dataToFilter = dataToFilter.filter(s => {
             const matchNameOrId = s.nama.toLowerCase().includes(searchTerm) || s.id.toLowerCase().includes(searchTerm);
             if (matchNameOrId) return true;
             
-            const prefix = s.id + '_';
+            const prefixBaru = `${semester}_${s.id}_`;
+            const prefixLama = `${s.id}_`;
             return typeof statePenilaian !== 'undefined' && Object.keys(statePenilaian).some(key => 
-                key.startsWith(prefix) && statePenilaian[key] && statePenilaian[key].penguji && statePenilaian[key].penguji.toLowerCase().includes(searchTerm)
+                (key.startsWith(prefixBaru) || (!key.includes(semester) && key.startsWith(prefixLama))) && statePenilaian[key] && statePenilaian[key].penguji && statePenilaian[key].penguji.toLowerCase().includes(searchTerm)
             );
         });
     }
@@ -98,7 +102,8 @@ function renderLaporanPage() {
 
     // 2. Defer data processing
     setTimeout(() => {
-        const allData = getLaporanData();
+        // Panggil fungsi secara eksplisit pada window (global scope) untuk menghindari ReferenceError
+        const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
 
         const totalSiswa = allData.length;
         const selesai = allData.filter(s => s.progress === 100).length;
@@ -112,7 +117,7 @@ function renderLaporanPage() {
         document.getElementById('laporan-stat-selesai').innerHTML = `${selesai} <span class="text-sm font-medium text-gray-400">/ ${totalSiswa}</span>`;
         document.getElementById('laporan-stat-rata-rata').textContent = totalAvg;
         document.getElementById('laporan-stat-lulus').innerHTML = `${lulus} <span class="text-sm font-medium text-emerald-500 text-[10px]">(${persentaseLulus}%)</span>`;
-        document.getElementById('laporan-stat-mumtaz').textContent = `${mumtaz} Santri`;
+        document.getElementById('laporan-stat-mumtaz').textContent = `${mumtaz} Siswa`;
 
         const filteredData = getFilteredLaporanData(allData);
 
@@ -142,12 +147,16 @@ function renderLaporanPage() {
                 } else if (s.lulus) {
                     statusBadge = 'border-emerald-200 bg-emerald-50 text-emerald-700';
                     statusText = 'Lulus';
-                } else {
+                } else if (s.adaNilaiDiBawahKKM) {
                     statusBadge = 'border-red-200 bg-red-50 text-red-600';
                     statusText = 'Remedial';
+                } else {
+                    statusBadge = 'border-amber-200 bg-amber-50 text-amber-600';
+                    statusText = 'Belum Selesai';
                 }
 
-                const avgColor = (s.progress === 0 || s.avg >= 7) ? 'text-teal-950' : 'text-red-500';
+                const kkm = (typeof appSettings !== 'undefined' && appSettings.kkm) ? parseFloat(appSettings.kkm) : 7.0;
+                const avgColor = (s.progress === 0 || s.avg >= kkm) ? 'text-teal-950' : 'text-red-500';
                 const avgText = s.progress === 0 ? '-' : s.avg;
                 const predikatText = s.progress === 0 ? '-' : `${predikatIcon} ${s.predikat.text}`;
                 const predikatColor = s.progress === 0 ? 'text-gray-400' : s.predikat.color;
@@ -159,7 +168,7 @@ function renderLaporanPage() {
                     </div>
                     <div class="flex items-start justify-between mb-4 pr-7">
                         <div class="flex items-center gap-3.5 w-full">
-                            <div class="w-11 h-11 rounded-2xl ${s.warna} flex items-center justify-center font-extrabold text-lg shrink-0 shadow-sm border border-white/60">${s.inisial}</div>
+                            <div class="w-11 h-11 rounded-2xl ${s.warna || 'bg-gray-200'} flex items-center justify-center font-extrabold text-lg shrink-0 shadow-sm border border-white/60">${s.inisial || '-'}</div>
                             <div class="flex-1 min-w-0">
                                 <h4 class="font-extrabold text-teal-950 text-base leading-tight group-hover:text-primary transition-colors truncate pr-2" title="${s.nama}">${s.nama}${badgeSusulan}</h4>
                                 <p class="text-xs text-gray-500 font-medium truncate">${s.id} &bull; ${s.kelas}</p>
@@ -181,7 +190,7 @@ function renderLaporanPage() {
                     <div class="flex items-center justify-between text-xs text-gray-500 font-medium pt-3 border-t border-gray-100 mt-auto">
                         <div class="flex flex-col max-w-[50%]">
                             <span class="font-bold text-primary text-[11px] truncate" title="${s.kategori}">${s.kategori}</span>
-                            <span class="text-[10px] font-bold ${statusBadge.replace('border-', 'text-').replace('bg-', '').replace('text-gray-500', 'text-gray-400')}">${statusText}</span>
+                            <span class="text-[10px] font-bold ${statusBadge.replace('border-', 'text-').replace('bg-', '').replace('text-gray-500', 'text-gray-400').replace('text-amber-600', 'text-amber-500')}">${statusText}</span>
                         </div>
                         <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
                             <button onclick="bukaModalLaporanDetail('${s.id}', '${s.kategori}')" class="p-2 bg-gray-50 border border-gray-100 text-gray-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 rounded-xl transition-colors shadow-sm active:scale-95" title="Lihat Rincian Nilai"><span class="material-symbols-outlined text-[18px]">summarize</span></button>
@@ -211,7 +220,7 @@ function renderLaporanPagination() {
     }
 
     let html = '';
-    html += `<button onclick="changeLaporanPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm active:scale-95">Sebelumnya</button>`;
+    html += `<button onclick="changeLaporanPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 sm:px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm active:scale-95 flex items-center justify-center min-w-[40px]"><span class="hidden sm:inline">Sebelumnya</span><span class="sm:hidden material-symbols-outlined text-[18px]">chevron_left</span></button>`;
 
     const maxPagesToShow = 5;
     let startPage, endPage;
@@ -247,7 +256,7 @@ function renderLaporanPagination() {
         html += `<button onclick="changeLaporanPage(${totalPages})" class="w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors shadow-sm active:scale-95">${totalPages}</button>`;
     }
 
-    html += `<button onclick="changeLaporanPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm active:scale-95">Berikutnya</button>`;
+    html += `<button onclick="changeLaporanPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 sm:px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm active:scale-95 flex items-center justify-center min-w-[40px]"><span class="hidden sm:inline">Berikutnya</span><span class="sm:hidden material-symbols-outlined text-[18px]">chevron_right</span></button>`;
     container.innerHTML = html;
 }
 
@@ -269,7 +278,9 @@ function renderDistributionChart(filteredData) {
         'Jayyid Jiddan': { count: 0, color: 'bg-emerald-500', labelColor: 'text-emerald-600' },
         'Jayyid': { count: 0, color: 'bg-blue-500', labelColor: 'text-blue-600' },
         'Maqbul': { count: 0, color: 'bg-orange-400', labelColor: 'text-orange-500' },
-        'Rasib': { count: 0, color: 'bg-red-500', labelColor: 'text-red-600' }
+        'Rasib': { count: 0, color: 'bg-red-600', labelColor: 'text-red-700' },
+        'Remedial': { count: 0, color: 'bg-red-400', labelColor: 'text-red-500' },
+        'Belum Selesai': { count: 0, color: 'bg-gray-400', labelColor: 'text-gray-500' }
     };
     
     let total = 0;
@@ -349,7 +360,7 @@ window.handleSelectMassalLaporan = function(action) {
     if (action === 'none') {
         selectedLaporanPeserta = [];
     } else {
-        const allData = getLaporanData();
+        const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
         let filteredData = getFilteredLaporanData(allData);
 
         if (action === 'page') {
@@ -370,7 +381,7 @@ window.handleSelectMassalLaporan = function(action) {
 };
 
 function cetakSyahadah(id, kat) {
-    const allData = getLaporanData();
+    const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
     const peserta = allData.find(p => p.id === id && p.kategori === kat);
     if (!peserta) {
         openAlert("Data peserta tidak ditemukan.");
@@ -386,7 +397,7 @@ function cetakSyahadah(id, kat) {
 function cetakSyahadahMassal() {
     if (selectedLaporanPeserta.length === 0) return;
     
-    const allData = getLaporanData();
+    const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
     const targetPeserta = [];
     
     selectedLaporanPeserta.forEach(sel => {
@@ -623,6 +634,7 @@ function bukaModalLaporanDetail(studentId, kategori) {
     if (items.length === 0) {
         html = '<p class="text-center text-sm text-gray-400 py-8 italic">Tidak ada materi ujian yang terdefinisi untuk kategori ini.</p>';
     } else {
+        const kkm = (typeof appSettings !== 'undefined' && appSettings.kkm) ? parseFloat(appSettings.kkm) : 7.0;
         items.forEach(item => {
             const penilaian = statePenilaian[`${studentId}_${item.no}`];
             const nilai = penilaian?.nilai;
@@ -631,7 +643,7 @@ function bukaModalLaporanDetail(studentId, kategori) {
             html += `
             <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <div><p class="font-bold text-sm text-teal-950">${item.nama}</p><p class="text-xs text-gray-500">${typeof item.ayat === 'number' ? item.ayat + ' Ayat' : item.ayat}</p></div>
-                ${isDinilai ? `<span class="text-xl font-black font-headline ${nilai < 7 ? 'text-red-600' : 'text-primary'}">${nilai}</span>` : `<span class="text-xs font-bold text-gray-400 italic">Belum Dinilai</span>`}
+                ${isDinilai ? `<span class="text-xl font-black font-headline ${nilai < kkm ? 'text-red-600' : 'text-primary'}">${nilai}</span>` : `<span class="text-xs font-bold text-gray-400 italic">Belum Dinilai</span>`}
             </div>`;
         });
     }
@@ -645,7 +657,7 @@ function tutupModalLaporanDetail() {
 }
 
 function eksporDataLaporan() {
-    const allData = getLaporanData();
+    const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
     const filteredData = getFilteredLaporanData(allData);
 
     if (filteredData.length === 0) {
@@ -680,7 +692,13 @@ function eksporDataLaporan() {
             });
         }
         const namaPenguji = Array.from(pengujiSet).join(' & ') || '-';
-        const statusText = s.progress === 0 ? 'Belum Ujian' : (s.lulus ? 'Lulus' : 'Remedial');
+        
+        let statusText = 'Belum Ujian';
+        if (s.progress > 0) {
+            if (s.lulus) statusText = 'Lulus';
+            else if (s.adaNilaiDiBawahKKM) statusText = 'Remedial';
+            else statusText = 'Belum Selesai';
+        }
 
         const avgVal = s.progress === 0 ? '-' : s.avg;
         const predikatVal = s.progress === 0 ? '-' : s.predikat.text;
@@ -706,7 +724,7 @@ function eksporDataLaporan() {
 }
 
 function cetakRekapLaporan() {
-    const allData = getLaporanData();
+    const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
     const filteredData = getFilteredLaporanData(allData);
 
     if (filteredData.length === 0) {
@@ -745,6 +763,7 @@ function cetakRekapLaporan() {
                 .badge { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; display: inline-block; }
                 .badge-lulus { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
                 .badge-remedial { background-color: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+                .badge-sedang { background-color: #fef3c7; color: #d97706; border: 1px solid #fde68a; }
                 .badge-belum { background-color: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
                 .avg-score { font-size: 16px; font-weight: 900; }
                 .predikat-text { font-weight: 600; font-size: 12px; }
@@ -778,8 +797,8 @@ function cetakRekapLaporan() {
 
     filteredData.forEach((s, index) => {
         let predikatText = s.predikat.text;
-        let statusBadgeClass = s.lulus ? 'badge-lulus' : 'badge-remedial';
-        let statusText = s.lulus ? 'Lulus' : 'Remedial';
+        let statusBadgeClass = 'badge-belum';
+        let statusText = 'Belum Ujian';
         let avgColorClass = s.avg < (appSettings.kkm || 7) ? 'color: #dc2626;' : 'color: #003336;';
         let avgText = s.avg;
         
@@ -789,6 +808,15 @@ function cetakRekapLaporan() {
             predikatText = '-';
             avgText = '-';
             avgColorClass = 'color: #6b7280;';
+        } else if (s.lulus) {
+            statusBadgeClass = 'badge-lulus';
+            statusText = 'Lulus';
+        } else if (s.adaNilaiDiBawahKKM) {
+            statusBadgeClass = 'badge-remedial';
+            statusText = 'Remedial';
+        } else {
+            statusBadgeClass = 'badge-sedang';
+            statusText = 'Belum Selesai';
         }
         
         const ketText = s.isSusulan ? '<span style="color:#d97706;font-weight:bold;font-size:10px;">Susulan</span>' : '-';
@@ -996,7 +1024,7 @@ window.bagikanHasilFilter = function() {
         return;
     }
 
-    const allData = getLaporanData();
+    const allData = typeof window.getLaporanData === 'function' ? window.getLaporanData() : [];
     const filteredData = getFilteredLaporanData(allData);
 
     if (filteredData.length === 0) {

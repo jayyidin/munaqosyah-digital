@@ -144,10 +144,12 @@
                 if (typeof dataPeserta !== 'undefined' && dataPeserta) {
                     const key = `${semester}_${kategori}`;
                     if (dataPeserta[key]) {
-                        pesertaList = dataPeserta[key];
+                    pesertaList = Array.isArray(dataPeserta[key]) ? dataPeserta[key] : (Array.isArray(dataPeserta[key].list) ? dataPeserta[key].list : []);
                     } else if (typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[kategori] && Array.isArray(dataPeserta[kategori])) {
                         pesertaList = dataPeserta[kategori]; // Fallback data lama
                     }
+                if (pesertaList && !Array.isArray(pesertaList) && Array.isArray(pesertaList.list)) pesertaList = pesertaList.list;
+                if (!Array.isArray(pesertaList)) pesertaList = [];
                 }
                 
                 if (searchTerm) {
@@ -270,7 +272,7 @@
                 return;
             }
 
-            let html = `<button onclick="changeUjianPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm">Prev</button>`;
+            let html = `<button onclick="changeUjianPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 sm:px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[40px]"><span class="hidden sm:inline">Prev</span><span class="sm:hidden material-symbols-outlined text-[18px]">chevron_left</span></button>`;
             
             const maxPagesToShow = 5;
             let startPage, endPage;
@@ -306,7 +308,7 @@
                 html += `<button onclick="changeUjianPage(${totalPages})" class="w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">${totalPages}</button>`;
             }
 
-            html += `<button onclick="changeUjianPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm">Next</button>`;
+            html += `<button onclick="changeUjianPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 sm:px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[40px]"><span class="hidden sm:inline">Next</span><span class="sm:hidden material-symbols-outlined text-[18px]">chevron_right</span></button>`;
             container.innerHTML = html;
         };
 
@@ -390,6 +392,8 @@
                 if (items.length === 0) {
                     html = '<div class="p-8 text-center bg-white rounded-2xl border border-gray-100 animate-view"><p class="text-gray-400 italic">Tidak ada materi ditemukan.</p></div>';
                 } else {
+                    // Menambahkan wrapper grid 2 kolom untuk membelah data
+                    html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
                     items.forEach(item => {
                         if (!item || !item.no) return;
                         const penilaian = (typeof statePenilaian !== 'undefined' && statePenilaian) ? statePenilaian[`${semester}_${studentId}_${item.no}`] : undefined;
@@ -402,31 +406,12 @@
                         
                         let statusColor = 'text-gray-400 bg-gray-50 border-gray-200';
                         if (isDinilai) {
-                            statusColor = (parseFloat(nilai) < kkm) ? 'text-red-600 bg-red-50 border-red-200' : 'text-primary bg-primary/10 border-primary/20';
+                            // Ubah nilai di bawah 8 menjadi merah
+                            statusColor = (parseFloat(nilai) < 8) ? 'text-red-600 bg-red-50 border-red-200' : 'text-primary bg-primary/10 border-primary/20';
                         }
                         
                         const icon = typeof item.no === 'string' && item.no.startsWith('M') ? 'psychology' : (typeof item.no === 'string' && (item.no.startsWith('H') || item.no.startsWith('L')) ? 'auto_stories' : 'menu_book');
                         const escapedNama = item.nama ? item.nama.replace(/'/g, "\\'") : ''; 
-
-                        let detailHtml = '';
-                        if (isDinilai) {
-                            const statusText = parseFloat(nilai) >= kkm ? 'Tuntas' : 'Remedial';
-                            const statusBadgeClass = parseFloat(nilai) >= kkm ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200';
-                            const catatanText = penilaian.catatan ? penilaian.catatan : 'Tidak ada catatan khusus';
-                            const pengujiText = penilaian.penguji ? penilaian.penguji : '-';
-                            
-                            detailHtml = `
-            <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-4 gap-3">
-                <div class="sm:col-span-1 flex flex-col gap-1 items-start">
-                    <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400">Status</span>
-                    <span class="inline-block px-2 py-1 text-center rounded border text-[10px] font-bold ${statusBadgeClass}">${statusText}</span>
-                </div>
-                <div class="sm:col-span-3 flex flex-col gap-1">
-                    <span class="text-[9px] font-bold uppercase tracking-widest text-gray-400">Catatan Penguji (${pengujiText})</span>
-                    <p class="text-xs text-gray-600 font-medium italic bg-gray-50 p-2 rounded-lg border border-gray-100">"${catatanText}"</p>
-                </div>
-            </div>`;
-                        }
 
                         html += `
             <div class="flex flex-col bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all group cursor-pointer animate-view" onclick="window.bukaFormPenilaian('${item.no}', '${escapedNama}')">
@@ -442,7 +427,6 @@
                             </div>
                             <div class="flex flex-wrap items-center gap-2 mt-0.5">
                                 <p class="text-[11px] font-medium text-gray-500">${typeof item.ayat === 'number' ? item.ayat + ' Ayat' : item.ayat}</p>
-                                ${isDinilai ? `<span class="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 flex items-center gap-1 w-fit"><span class="material-symbols-outlined text-[10px]">person</span> ${penilaian.penguji || '-'}</span>` : ''}
                             </div>
                         </div>
                     </div>
@@ -461,9 +445,9 @@
                         </div>
                     </div>
                 </div>
-                ${detailHtml}
             </div>`;
                     });
+                    html += '</div>';
                 }
                 container.innerHTML = html;
             } catch (error) {
@@ -494,7 +478,9 @@
 
                             document.getElementById('modal-title').innerText = `Nilai: ${surahNama}${ayatInfo}`;
                             const key = `${semester}_${kategori}`;
-                            const pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null) || [];
+                        let pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null);
+                        if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
+                        if (!Array.isArray(pList)) pList = [];
                             const pesertaName = pList.find(p => p.id === studentId)?.nama || '';
                             document.getElementById('modal-subtitle').innerText = `Siswa: ${pesertaName}`;
 
@@ -524,9 +510,11 @@
                                 return;
                             }
 
-                            if (currentUser.role === 'Guru Penguji') {
-                                const todayString = new Date().toISOString().split('T')[0];
-                                if (!appSettings.examDates || appSettings.examDates.length === 0 || !appSettings.examDates.includes(todayString)) {
+                        if (typeof currentUser !== 'undefined' && currentUser.role === 'Guru Penguji') {
+                            // Perbaikan: Gunakan waktu lokal agar tidak tergeser ke hari sebelumnya karena zona waktu UTC
+                            const now = new Date();
+                            const todayString = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+                            if (typeof appSettings === 'undefined' || !appSettings.examDates || appSettings.examDates.length === 0 || !appSettings.examDates.includes(todayString)) {
                                     if (formContainer) formContainer.classList.add('hidden');
                                     openAlert("Penilaian hanya bisa dilakukan pada tanggal ujian yang telah ditentukan.");
                                     window.tutupModal();
@@ -574,14 +562,14 @@
                             }
                             const inputPenguji = document.getElementById('modal-input-penguji');
                             if (inputPenguji) {
-                                if (currentUser.role === 'Admin Utama') {
+                                if (typeof currentUser !== 'undefined' && currentUser.role === 'Admin Utama') {
                                     inputPenguji.value = '';
                                     inputPenguji.removeAttribute('readonly');
                                     inputPenguji.classList.remove('bg-gray-200', 'cursor-not-allowed');
                                     inputPenguji.classList.add('bg-white', 'focus:ring-2', 'focus:ring-primary/20');
                                     inputPenguji.placeholder = 'Ketik Nama Penguji (Opsional)';
                                 } else {
-                                    inputPenguji.value = currentUser.name;
+                                    inputPenguji.value = typeof currentUser !== 'undefined' ? currentUser.name : '';
                                     inputPenguji.setAttribute('readonly', 'true');
                                     inputPenguji.classList.remove('bg-white', 'focus:ring-2', 'focus:ring-primary/20');
                                     inputPenguji.classList.add('bg-gray-200', 'cursor-not-allowed');
@@ -599,7 +587,7 @@
                                 const inputCatatan = document.getElementById('modal-input-catatan');
                                 if (inputCatatan) inputCatatan.value = existingData.catatan || '';
                                 
-                                if (currentUser.role === 'Admin Utama' && existingData.penguji && inputPenguji) {
+                                if (typeof currentUser !== 'undefined' && currentUser.role === 'Admin Utama' && existingData.penguji && inputPenguji) {
                                     inputPenguji.value = existingData.penguji;
                                 }
 
@@ -682,7 +670,7 @@
                             }
 
                             const inputPengujiEl = document.getElementById('modal-input-penguji');
-                            const penguji = inputPengujiEl ? inputPengujiEl.value.trim() : (currentUser.role === 'Admin Utama' ? '' : currentUser.name);
+                            const penguji = inputPengujiEl ? inputPengujiEl.value.trim() : ((typeof currentUser !== 'undefined' && currentUser.role === 'Admin Utama') ? '' : (typeof currentUser !== 'undefined' ? currentUser.name : 'Admin'));
                             const catatanEl = document.getElementById('modal-input-catatan');
                             const catatan = catatanEl ? catatanEl.value : '';
 
@@ -716,20 +704,23 @@
                             window.sessionUpdatedMaterials.add(stateKey);
 
                             const key = `${semester}_${kategori}`;
-                            const pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null) || [];
+                        let pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null);
+                        if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
+                        if (!Array.isArray(pList)) pList = [];
                             const peserta = pList.find(p => p.id === studentId) || null;
                             if (peserta) {
-                                activityLog.unshift({
+                                if (typeof window.activityLog === 'undefined') window.activityLog = [];
+                                window.activityLog.unshift({
                                     type: 'penilaian',
                                     waktu: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
                                     data: { nama: peserta.nama, materi: surahNamaEdit, nilai: parseFloat(nilai), penguji: penguji || 'Admin' }
                                 });
-                                if (activityLog.length > 20) activityLog.pop();
+                                if (window.activityLog.length > 20) window.activityLog.pop();
                             }
 
                             const batch = db.batch();
                             batch.set(db.collection('statePenilaian').doc(stateKey), statePenilaian[stateKey]);
-                            batch.set(db.collection('appData').doc('activityLog'), { log: activityLog }, { merge: true });
+                            batch.set(db.collection('appData').doc('activityLog'), { log: typeof window.activityLog !== 'undefined' ? window.activityLog : [] }, { merge: true });
 
                             batch.commit().then(() => {
                                 window.saveLocalState(); // Menyimpan ke localStorage sbg backup lokal
@@ -922,7 +913,9 @@
         const key = `${semester}_${kat}`;
         let pList = [];
         if (typeof dataPeserta !== 'undefined') {
-            pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null) || [];
+        pList = dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null);
+        if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
+        if (!Array.isArray(pList)) pList = [];
         }
         
         if (pList.length === 0) {
@@ -998,7 +991,7 @@
         
         const batch = db.batch();
         let updatesCount = 0;
-        const penguji = currentUser.role === 'Admin Utama' ? '' : currentUser.name;
+        const penguji = (typeof currentUser !== 'undefined' && currentUser.role === 'Admin Utama') ? '' : (typeof currentUser !== 'undefined' ? currentUser.name : 'Admin');
         const waktu = new Date().toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         const waktuLog = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
         
@@ -1044,10 +1037,13 @@
                         if (materiObj) matNama = materiObj.nama;
 
                         const keyList = `${semester}_${kat}`;
-                        const pList = dataPeserta[keyList] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null) || [];
+                    let pList = dataPeserta[keyList] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null);
+                    if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
+                    if (!Array.isArray(pList)) pList = [];
                         const p = pList.find(x => x.id === studentId);
                         if (p) {
-                            activityLog.unshift({
+                                if (typeof window.activityLog === 'undefined') window.activityLog = [];
+                                window.activityLog.unshift({
                                 type: 'penilaian',
                                 waktu: waktuLog,
                                 data: { nama: p.nama, materi: matNama, nilai: nilaiFloat, penguji: penguji ? penguji + " (Massal)" : "Admin (Massal)" }
@@ -1064,8 +1060,8 @@
             return;
         }
         
-        if (activityLog.length > 20) activityLog = activityLog.slice(0, 20);
-        batch.set(db.collection('appData').doc('activityLog'), { log: activityLog }, { merge: true });
+        if (typeof window.activityLog !== 'undefined' && window.activityLog.length > 20) window.activityLog = window.activityLog.slice(0, 20);
+        batch.set(db.collection('appData').doc('activityLog'), { log: typeof window.activityLog !== 'undefined' ? window.activityLog : [] }, { merge: true });
         
         batch.commit().then(() => {
             if (typeof window.saveLocalState === 'function') window.saveLocalState();
@@ -1135,7 +1131,9 @@
                     let needsRender = false;
 
                     const key = `${semester}_${kategori}`;
-                        const pList = (typeof dataPeserta !== 'undefined') ? (dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null) || []) : [];
+                let pList = (typeof dataPeserta !== 'undefined') ? (dataPeserta[key] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kategori] : null)) : null;
+                if (pList && !Array.isArray(pList) && Array.isArray(pList.list)) pList = pList.list;
+                if (!Array.isArray(pList)) pList = [];
                     const p = pList.find(x => x.id === studentId);
 
                     if (header && header.innerHTML.trim() === '') {

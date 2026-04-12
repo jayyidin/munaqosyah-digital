@@ -1,6 +1,7 @@
 // --- NEW DASHBOARD LOGIC ---
 window.pesertaPagination = window.pesertaPagination || { currentPage: 1, itemsPerPage: 12, totalPages: 0, totalItems: 0 };
 window.dashboardSiswaPerhatianPagination = window.dashboardSiswaPerhatianPagination || { currentPage: 1, itemsPerPage: 5, totalPages: 0, totalItems: 0 };
+window.selectedPeserta = window.selectedPeserta || [];
 
 // Penyesuaian Global untuk Kalkulasi Status dan Laporan
 window.getStatusPeserta = function(id, kategori, semesterOverride) {
@@ -35,34 +36,51 @@ window.getLaporanData = function(semesterOverride = null) {
     
     listKategori.forEach(k => {
         const kat = k.nama;
-        const list = dataPeserta[`${semester}_${kat}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null) || [];
+        let list = dataPeserta[`${semester}_${kat}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null);
+        if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+        if (!Array.isArray(list)) list = [];
         list.forEach(p => {
             const status = window.getStatusPeserta(p.id, kat, semester);
             let totalNilai = 0, jumlahPenilaian = 0;
+            let adaNilaiDiBawahKKM = false;
             
             Object.keys(statePenilaian || {}).forEach(key => {
                 const keyBaru = `${semester}_${p.id}_`;
                 const keyLama = `${p.id}_`;
                 if (key.startsWith(keyBaru) || (!key.includes(semester) && key.startsWith(keyLama))) {
+                    // Lewati data peta kesalahan (array) lembaran agar kalkulasi nilai tidak menjadi NaN (Not a Number)
+                    if (key.endsWith('_lembar')) return;
                     const surahNo = key.startsWith(keyBaru) ? key.split('_')[2] : key.split('_')[1];
                     if (window.getMateriList(kat).some(i => String(i.no) === String(surahNo))) {
-                        totalNilai += statePenilaian[key].nilai;
-                        jumlahPenilaian++;
+                        const n = statePenilaian[key].nilai;
+                        if (n !== undefined) {
+                            totalNilai += n;
+                            jumlahPenilaian++;
+                            if (n < kkm) adaNilaiDiBawahKKM = true;
+                        }
                     }
                 }
             });
             
             const avg = jumlahPenilaian > 0 ? parseFloat((totalNilai / jumlahPenilaian).toFixed(1)) : 0;
-            const lulus = status.progress > 0 && avg >= kkm;
+            
+            // Syarat lulus baru: Semua materi tuntas diuji (100%) dan tidak ada nilai di bawah KKM
+            const lulus = status.progress === 100 && !adaNilaiDiBawahKKM; 
+            
             let predikat = { text: 'Belum Lulus', color: 'text-gray-500', icon: '' };
             if (status.progress > 0) {
-                if (avg >= 9) predikat = { text: 'Mumtaz', color: 'text-amber-500', icon: 'workspace_premium' };
-                else if (avg >= 8) predikat = { text: 'Jayyid Jiddan', color: 'text-emerald-500', icon: 'verified' };
-                else if (avg >= 7) predikat = { text: 'Jayyid', color: 'text-blue-500', icon: 'thumb_up' };
-                else if (avg >= 6) predikat = { text: 'Maqbul', color: 'text-orange-400', icon: 'check_circle' };
-                else predikat = { text: 'Rasib', color: 'text-red-500', icon: 'cancel' };
+                if (!lulus) {
+                    if (adaNilaiDiBawahKKM) predikat = { text: 'Remedial', color: 'text-red-500', icon: 'warning' };
+                    else predikat = { text: 'Belum Selesai', color: 'text-gray-500', icon: 'hourglass_empty' };
+                } else {
+                    if (avg >= 9) predikat = { text: 'Mumtaz', color: 'text-amber-500', icon: 'workspace_premium' };
+                    else if (avg >= 8) predikat = { text: 'Jayyid Jiddan', color: 'text-emerald-500', icon: 'verified' };
+                    else if (avg >= 7) predikat = { text: 'Jayyid', color: 'text-blue-500', icon: 'thumb_up' };
+                    else if (avg >= 6) predikat = { text: 'Maqbul', color: 'text-orange-400', icon: 'check_circle' };
+                    else predikat = { text: 'Rasib', color: 'text-red-500', icon: 'cancel' };
+                }
             }
-            allData.push({ ...p, kategori: kat, semester: semester, progress: status.progress, completed: status.completed, totalMateri: status.total, totalNilai, jumlahPenilaian, avg, lulus, predikat });
+            allData.push({ ...p, kategori: kat, semester: semester, progress: status.progress, completed: status.completed, totalMateri: status.total, totalNilai, jumlahPenilaian, avg, lulus, predikat, adaNilaiDiBawahKKM });
         });
     });
     return allData;
@@ -87,7 +105,9 @@ function calculateDashboardStats(semester, filterKategori = "") {
     kategoriUntukProses.forEach(kategori => {
         if (!kategori) return;
         const namaKategori = kategori.nama;
-        const pesertaDiKategori = dataPeserta[`${semester}_${namaKategori}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[namaKategori] : null) || [];
+        let pesertaDiKategori = dataPeserta[`${semester}_${namaKategori}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[namaKategori] : null);
+        if (pesertaDiKategori && !Array.isArray(pesertaDiKategori) && Array.isArray(pesertaDiKategori.list)) pesertaDiKategori = pesertaDiKategori.list;
+        if (!Array.isArray(pesertaDiKategori)) pesertaDiKategori = [];
         if (pesertaDiKategori.length === 0 && !filterKategori) return;
 
         let katStats = {
@@ -207,8 +227,9 @@ function renderAktivitasTerbaru() {
     if (!container) return;
     let html = '';
     
+    if (typeof window.activityLog === 'undefined') window.activityLog = [];
     // Menyimpan index asli (agar tidak salah hapus) sebelum di-filter
-    const penilaianLog = activityLog
+    const penilaianLog = window.activityLog
         .map((log, index) => ({ ...log, originalIndex: index }))
         .filter(log => log.type === 'penilaian')
         .slice(0, 5);
@@ -247,9 +268,10 @@ function renderAktivitasTerbaru() {
 
 window.hapusAktivitas = function(index) {
     const proceed = () => {
-        if (index > -1 && index < activityLog.length) {
-            activityLog.splice(index, 1);
-            db.collection('appData').doc('activityLog').set({ log: activityLog }, { merge: true })
+        if (typeof window.activityLog === 'undefined') window.activityLog = [];
+        if (index > -1 && index < window.activityLog.length) {
+            window.activityLog.splice(index, 1);
+            db.collection('appData').doc('activityLog').set({ log: window.activityLog }, { merge: true })
                 .then(() => renderAktivitasTerbaru())
                 .catch(err => { if (typeof openAlert !== 'undefined') openAlert("Gagal menghapus aktivitas: " + err.message); });
         }
@@ -393,7 +415,8 @@ function renderSiswaPerluPerhatianDashboard(semester, filterKategori = "") {
     if (!semester) { container.innerHTML = '<p class="text-center text-sm text-gray-400 py-4 italic">Pilih semester.</p>'; return; }
 
     const allData = getLaporanData(semester);
-    let perluPerhatian = allData.filter(s => !s.lulus && s.progress > 0);
+        // Tampilkan siswa yang punya materi di bawah KKM
+        let perluPerhatian = allData.filter(s => s.adaNilaiDiBawahKKM && s.progress > 0);
     if (filterKategori) {
         perluPerhatian = perluPerhatian.filter(s => s.kategori === filterKategori);
     }
@@ -415,8 +438,7 @@ function renderSiswaPerluPerhatianDashboard(semester, filterKategori = "") {
         html = '<p class="text-center text-sm text-gray-400 py-4 italic">Tidak ada siswa yang perlu perhatian saat ini. Kerja bagus!</p>';
     } else {
         paginatedData.forEach(p => {
-            const selisihKkm = (kkm - p.avg).toFixed(1);
-            const selisihInfo = p.avg < kkm ? `<p class="text-[9px] text-red-400 mt-0.5 font-bold">-${selisihKkm} dari KKM</p>` : '';
+                const selisihInfo = p.adaNilaiDiBawahKKM ? `<p class="text-[9px] text-red-400 mt-0.5 font-bold">Ada nilai remedial</p>` : '';
 
             html += `
             <div class="flex items-center justify-between p-2 hover:bg-gray-50 active:scale-[0.98] active:bg-gray-100 rounded-xl transition-all duration-200 cursor-pointer">
@@ -491,7 +513,9 @@ function populateFiltersPeserta() {
         const currentVal = filterPembimbing.value;
         const pembimbingSet = new Set();
         listKategori.forEach(k => {
-            const list = dataPeserta[`${semester}_${k.nama}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[k.nama] : null) || [];
+            let list = dataPeserta[`${semester}_${k.nama}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[k.nama] : null);
+            if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+            if (!Array.isArray(list)) list = [];
             list.forEach(p => { if (p.pembimbing) pembimbingSet.add(p.pembimbing); });
         });
         const pembimbingList = Array.from(pembimbingSet).sort();
@@ -557,7 +581,9 @@ function renderTablePeserta() {
         listKategori.forEach(k => {
             const kat = k.nama;
             if (!filterKat || filterKat === kat) {
-                const list = dataPeserta[`${semester}_${kat}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null) || [];
+                let list = dataPeserta[`${semester}_${kat}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null);
+                if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+                if (!Array.isArray(list)) list = [];
                 list.forEach(p => {
                     if ((!filterKelas || filterKelas === p.kelas) && (!filterPembimbing || filterPembimbing === p.pembimbing)) {
                         flatPesertaList.push({ ...p, kategori: kat, semester: semester });
@@ -612,7 +638,7 @@ function renderTablePeserta() {
         if (paginatedList.length === 0) {
             const emptyTitle = searchTerm ? 'Pencarian Tidak Ditemukan' : 'Belum Ada Peserta';
             const emptyMessage = searchTerm 
-                ? `Tidak ada santri yang cocok dengan pencarian "<strong>${searchTerm}</strong>" atau filter yang Anda terapkan saat ini.` 
+                ? `Tidak ada siswa yang cocok dengan pencarian "<strong>${searchTerm}</strong>" atau filter yang Anda terapkan saat ini.` 
                 : 'Tidak ada peserta untuk ditampilkan. Silakan tambahkan peserta baru atau ubah filter Anda.';
             
             html = `
@@ -710,7 +736,9 @@ window.handleSelectMassalPeserta = function(action) {
         listKategori.forEach(k => {
             const kat = k.nama;
             if (!filterKat || filterKat === kat) {
-                const list = dataPeserta[`${semester}_${kat}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null) || [];
+                let list = dataPeserta[`${semester}_${kat}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat] : null);
+                if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+                if (!Array.isArray(list)) list = [];
                 list.forEach(p => {
                     if ((!filterKelas || filterKelas === p.kelas) && (!filterPembimbing || filterPembimbing === p.pembimbing)) {
                         flatPesertaList.push({ ...p, kategori: kat, semester: semester });
@@ -756,7 +784,9 @@ function updateQuickStats() {
 
     let totalPeserta = 0;
     const kategoriCounts = listKategori.map(kat => {
-        const count = (dataPeserta[`${semester}_${kat.nama}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat.nama] : null) || []).length;
+        let list = dataPeserta[`${semester}_${kat.nama}`] || ((typeof listSemester !== 'undefined' && listSemester[0] === semester) ? dataPeserta[kat.nama] : null);
+        if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+        const count = Array.isArray(list) ? list.length : 0;
         totalPeserta += count;
         return { nama: kat.nama, count: count };
     }).sort((a, b) => b.count - a.count);
@@ -852,7 +882,7 @@ function renderPesertaPaginationControls() {
     }
 
     let html = '';
-    html += `<button onclick="changePesertaPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm">Sebelumnya</button>`;
+    html += `<button onclick="changePesertaPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-3 sm:px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[40px]"><span class="hidden sm:inline">Sebelumnya</span><span class="sm:hidden material-symbols-outlined text-[18px]">chevron_left</span></button>`;
 
     const maxPagesToShow = 5;
     let startPage, endPage;
@@ -888,12 +918,12 @@ function renderPesertaPaginationControls() {
         html += `<button onclick="changePesertaPage(${totalPages})" class="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">${totalPages}</button>`;
     }
 
-    html += `<button onclick="changePesertaPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2 rounded-lg text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm">Berikutnya</button>`;
+    html += `<button onclick="changePesertaPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-3 sm:px-4 py-2 rounded-xl text-sm font-bold bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors shadow-sm flex items-center justify-center min-w-[40px]"><span class="hidden sm:inline">Berikutnya</span><span class="sm:hidden material-symbols-outlined text-[18px]">chevron_right</span></button>`;
     container.innerHTML = html;
 }
 
 function hapusPesertaTunggal(id, kat, semester) {
-    openConfirm(`Hapus santri ${id}? Tindakan ini akan menghapus data peserta dari database.`, (yes) => {
+    openConfirm(`Hapus siswa ${id}? Tindakan ini akan menghapus data peserta dari database.`, (yes) => {
         if (yes) {
             const key = dataPeserta[`${semester}_${kat}`] ? `${semester}_${kat}` : ((typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[kat]) ? kat : `${semester}_${kat}`);
             if (!dataPeserta[key]) return;
@@ -958,8 +988,10 @@ window.simpanBulkEdit = function() {
         const kat = k.nama;
         const key = dataPeserta[`${semester}_${kat}`] ? `${semester}_${kat}` : ((typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[kat]) ? kat : `${semester}_${kat}`);
         let updated = false;
-        if (dataPeserta[key]) {
-            dataPeserta[key].forEach(p => {
+        let list = dataPeserta[key];
+        if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+        if (Array.isArray(list)) {
+            list.forEach(p => {
                 if (selectedPeserta.includes(p.id)) {
                     if (type === 'pembimbing') p.pembimbing = newValue;
                     if (type === 'jadwal') p.tanggalUjian = newValue;
@@ -968,7 +1000,7 @@ window.simpanBulkEdit = function() {
                 }
             });
             if (updated) {
-                batch.set(db.collection('dataPeserta').doc(key), { list: dataPeserta[key] });
+                batch.set(db.collection('dataPeserta').doc(key), { list: list });
             }
         }
     });
@@ -993,8 +1025,10 @@ window.cetakKartuUjianMassal = function() {
     listKategori.forEach(k => {
         const kat = k.nama;
         const key = dataPeserta[`${semester}_${kat}`] ? `${semester}_${kat}` : ((typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[kat]) ? kat : `${semester}_${kat}`);
-        if (dataPeserta[key]) {
-            dataPeserta[key].forEach(p => {
+        let list = dataPeserta[key];
+        if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+        if (Array.isArray(list)) {
+            list.forEach(p => {
                 if (selectedPeserta.includes(p.id)) targetPeserta.push({...p, kategori: kat, semester: semester});
             });
         }
@@ -1044,8 +1078,10 @@ function eksporDataPeserta() {
         const kat = k.nama;
         if (!filterKat || filterKat === kat) {
             const key = dataPeserta[`${semester}_${kat}`] ? `${semester}_${kat}` : ((typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[kat]) ? kat : `${semester}_${kat}`);
-            if (dataPeserta[key]) {
-                dataPeserta[key].forEach(p => flatPesertaList.push({ ...p, kategori: kat, semester: semester }));
+            let list = dataPeserta[key];
+            if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+            if (Array.isArray(list)) {
+                list.forEach(p => flatPesertaList.push({ ...p, kategori: kat, semester: semester }));
             }
         }
     });
@@ -1109,8 +1145,11 @@ function eksporDataPeserta() {
 
 window.bukaModalEditPeserta = function (id, kat, semester) {
     const key = dataPeserta[`${semester}_${kat}`] ? `${semester}_${kat}` : ((typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[kat]) ? kat : `${semester}_${kat}`);
-    if (!semester || !dataPeserta[key]) return;
-    const p = dataPeserta[key].find(x => x.id === id);
+    if (!semester) return;
+    let list = dataPeserta[key];
+    if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+    if (!Array.isArray(list)) return;
+    const p = list.find(x => x.id === id);
     if (!p) return;
 
     document.getElementById('edit-id-peserta').value = p.id;
@@ -1175,11 +1214,13 @@ window.simpanEditPeserta = function () {
 
     const oldKey = dataPeserta[`${semester}_${oldKat}`] ? `${semester}_${oldKat}` : ((typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[oldKat]) ? oldKat : `${semester}_${oldKat}`);
     const newKey = `${semester}_${newKat}`;
-    if (!dataPeserta[oldKey]) return;
-    const pIndex = dataPeserta[oldKey].findIndex(x => x.id === id);
+    let oldList = dataPeserta[oldKey];
+    if (oldList && !Array.isArray(oldList) && Array.isArray(oldList.list)) oldList = oldList.list;
+    if (!Array.isArray(oldList)) return;
+    const pIndex = oldList.findIndex(x => x.id === id);
     if (pIndex === -1) return;
 
-    const p = dataPeserta[oldKey][pIndex];
+    const p = oldList[pIndex];
     p.nama = nama;
     p.kelas = kelas;
     p.pembimbing = pembimbing;
@@ -1187,19 +1228,23 @@ window.simpanEditPeserta = function () {
     p.isSusulan = isSusulan;
     p.inisial = nama.trim().split(/\s+/).map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
-    // Jika Kategori diubah, pindahkan data array santri ke dalam kelompok yang baru
+    // Jika Kategori diubah, pindahkan data array siswa ke dalam kelompok yang baru
     if (oldKat !== newKat) {
         p.kategori = newKat;
-        dataPeserta[oldKey].splice(pIndex, 1);
-        if (!dataPeserta[newKey]) dataPeserta[newKey] = [];
-        dataPeserta[newKey].push(p);
+        oldList.splice(pIndex, 1);
+        let newList = dataPeserta[newKey];
+        if (newList && !Array.isArray(newList) && Array.isArray(newList.list)) newList = newList.list;
+        if (!Array.isArray(newList)) { newList = []; dataPeserta[newKey] = newList; }
+        newList.push(p);
     }
     const badgeSusulanHtml = p.isSusulan ? `<div class="mt-2 bg-orange-50 text-orange-700 border border-orange-100 inline-flex items-center gap-2 text-xs font-bold px-3 py-1 rounded-full"><span class="material-symbols-outlined text-sm">history</span><span>Ujian Susulan</span></div>` : '';
 
     const batch = db.batch();
-    batch.set(db.collection('dataPeserta').doc(oldKey), { list: dataPeserta[oldKey] });
+    batch.set(db.collection('dataPeserta').doc(oldKey), { list: oldList });
     if (oldKat !== newKat) {
-        batch.set(db.collection('dataPeserta').doc(newKey), { list: dataPeserta[newKey] });
+        let newList = dataPeserta[newKey];
+        if (newList && !Array.isArray(newList) && Array.isArray(newList.list)) newList = newList.list;
+        batch.set(db.collection('dataPeserta').doc(newKey), { list: Array.isArray(newList) ? newList : [] });
     }
 
     batch.commit().then(() => {
@@ -1208,4 +1253,49 @@ window.simpanEditPeserta = function () {
         if (typeof renderTablePeserta === 'function') renderTablePeserta();
         if (typeof updateQuickStats === 'function') updateQuickStats();
     });
+};
+
+window.hapusPesertaTerpilih = function() {
+    if (window.selectedPeserta.length === 0) return;
+    const msg = `Apakah Anda yakin ingin menghapus ${window.selectedPeserta.length} peserta yang dipilih?`;
+    
+    const prosesHapusMassal = () => {
+        const batch = db.batch();
+        const semester = window.currentState.semester;
+        let isChanged = false;
+
+        listKategori.forEach(k => {
+            const kat = k.nama;
+            const key = dataPeserta[`${semester}_${kat}`] ? `${semester}_${kat}` : ((typeof listSemester !== 'undefined' && listSemester[0] === semester && dataPeserta[kat]) ? kat : `${semester}_${kat}`);
+            let list = dataPeserta[key];
+            if (list && !Array.isArray(list) && Array.isArray(list.list)) list = list.list;
+            if (Array.isArray(list)) {
+                const originalLength = list.length;
+                list = list.filter(p => !window.selectedPeserta.includes(p.id));
+                if (list.length !== originalLength) {
+                    dataPeserta[key] = list; // Perbarui cache lokal
+                    batch.set(db.collection('dataPeserta').doc(key), { list: list });
+                    isChanged = true;
+                }
+            }
+        });
+
+        if (isChanged) {
+            batch.commit().then(() => {
+                if (typeof window.saveLocalState === 'function') window.saveLocalState();
+                if (typeof openAlert === 'function') openAlert(`Berhasil menghapus ${window.selectedPeserta.length} peserta.`);
+                window.batalPilihSemua();
+                if (typeof renderTablePeserta === 'function') renderTablePeserta();
+                if (typeof updateQuickStats === 'function') updateQuickStats();
+            }).catch(err => {
+                if (typeof openAlert === 'function') openAlert("Gagal menghapus peserta: " + err.message);
+            });
+        }
+    };
+
+    if (typeof openConfirm === 'function') {
+        openConfirm(msg, (yes) => { if (yes) prosesHapusMassal(); });
+    } else {
+        if (confirm(msg)) prosesHapusMassal();
+    }
 };
